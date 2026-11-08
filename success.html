@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RiskCheck - ส่งรายงานสำเร็จ</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#BFD9DC]/40 min-h-screen pb-10">
+
+  <!-- Header -->
+  <header class="bg-[#7E212A] text-white p-4 shadow-md sticky top-0 z-10">
+    <div class="max-w-md mx-auto flex justify-between items-center">
+      <h1 class="text-xl font-bold flex items-center gap-2">
+        <span></span> RiskCheck
+      </h1>
+      <span class="text-xs bg-emerald-600 px-2.5 py-1 rounded-full font-medium">ส่งรายงานเรียบร้อย</span>
+    </div>
+  </header>
+
+  <main class="max-w-md mx-auto p-4 space-y-4">
+
+    <!-- การ์ดแจ้งเตือนสำเร็จ -->
+    <div class="bg-white rounded-xl shadow-md p-5 text-center border border-slate-100">
+      <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 text-3xl">
+        ✓
+      </div>
+      <h2 class="text-lg font-bold text-slate-800">ขอบคุณสำหรับการรายงาน!</h2>
+      <p class="text-xs text-slate-500 mt-1">ข้อมูลของคุณถูกส่งไปยัง จป. / ผู้บริหารเรียบร้อยแล้ว</p>
+      
+      <!-- รหัสเคสสำหรับติดตาม -->
+      <div class="mt-4 bg-slate-50 p-3 rounded-lg border border-slate-200">
+        <span class="text-xs text-slate-500 block">รหัสติดตามเหตุการณ์ (Ticket ID)</span>
+        <span id="displayTicketId" class="text-lg font-extrabold text-[#7E212A] tracking-wider">RC-XXXXX</span>
+      </div>
+    </div>
+
+    <!-- ผลการประเมินความเสี่ยง Layer 1 -->
+    <div class="bg-white rounded-xl shadow-md p-5 border border-slate-100 space-y-3">
+      <h3 class="text-sm font-bold text-slate-800 border-b pb-2 flex justify-between items-center">
+        <span>ผลการประเมินความเสี่ยง</span>
+        <span id="riskScoreBadge" class="text-xs px-2.5 py-1 rounded-full font-bold bg-slate-200 text-slate-700">คะแนน: -</span>
+      </h3>
+
+      <div class="flex justify-between items-center">
+        <span class="text-xs text-slate-600">ระดับความเสี่ยง (Risk Level):</span>
+        <span id="riskLevelTag" class="text-xs font-bold px-3 py-1 rounded-full bg-slate-200 text-slate-700">-</span>
+      </div>
+
+      <!-- Timeline สถานะติดตามเคส -->
+      <div class="pt-2">
+        <span class="text-xs text-slate-600 block mb-2 font-semibold">สถานะการดำเนินงาน:</span>
+        <div class="grid grid-cols-3 gap-1 text-center text-[11px]">
+          <div id="statusPending" class="p-2 rounded-lg bg-slate-100 text-slate-400">1. รับเรื่องแล้ว</div>
+          <div id="statusProgress" class="p-2 rounded-lg bg-slate-100 text-slate-400">2. กำลังแก้ไข</div>
+          <div id="statusClosed" class="p-2 rounded-lg bg-slate-100 text-slate-400">3. ปิดเคสแล้ว</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- มาตรการแนะนำตามหลัก OHS (Hierarchy of Controls) -->
+    <div class="bg-white rounded-xl shadow-md p-5 border border-slate-100 space-y-2">
+      <h3 class="text-sm font-bold text-[#7E212A] flex items-center gap-1.5">
+        <span></span> มาตรการตอบสนองแนะนำ (OHS Controls)
+      </h3>
+      <div class="bg-[#BFD9DC]/30 p-3 rounded-lg border border-[#BFD9DC] text-xs text-slate-700 space-y-1">
+        <p><strong class="text-[#7E212A]">ระดับการควบคุม:</strong> <span id="controlTier">-</span></p>
+        <p><strong class="text-[#7E212A]">ข้อเสนอแนะ:</strong> <span id="controlAction">-</span></p>
+      </div>
+    </div>
+
+    <!-- สรุปรายละเอียดที่รายงานไป -->
+    <div class="bg-white rounded-xl shadow-md p-5 border border-slate-100 space-y-2 text-xs text-slate-600">
+      <h3 class="text-sm font-bold text-slate-800 border-b pb-2">📋 สรุปข้อมูลรายงาน</h3>
+      <p><strong>ผู้รายงาน:</strong> <span id="summaryReporter">-</span></p>
+      <p><strong>พื้นที่เกิดเหตุ:</strong> <span id="summaryArea">-</span></p>
+      <p><strong>วันเวลา:</strong> <span id="summaryDatetime">-</span></p>
+      <p><strong>ประเภทอันตราย:</strong> <span id="summaryHazard">-</span></p>
+      <p><strong>รายละเอียด:</strong> <span id="summaryDesc">-</span></p>
+    </div>
+
+    <!-- ปุ่มกลับไปหน้าหลัก -->
+    <a href="index.html" class="block text-center bg-[#7E212A] hover:bg-[#631921] text-white font-bold py-3 rounded-lg shadow-md transition-colors text-sm">
+      + แจ้งเหตุการณ์ใหม่
+    </a>
+
+  </main>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // ดึง Ticket ID จาก URL Parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const ticketId = urlParams.get('ticketId');
+
+      if (!ticketId) {
+        alert('ไม่พบรหัสเหตุการณ์');
+        window.location.href = 'index.html';
+        return;
+      }
+
+      // ดึงข้อมูลเคสจาก LocalStorage
+      const reports = JSON.parse(localStorage.getItem('riskCheckReports')) || [];
+      const report = reports.find(r => r.id === ticketId);
+
+      if (!report) {
+        document.getElementById('displayTicketId').innerText = ticketId;
+        return;
+      }
+
+      // แสดงข้อมูลบนหน้าจอ
+      document.getElementById('displayTicketId').innerText = report.id;
+      
+      const scoreBadge = document.getElementById('riskScoreBadge');
+      scoreBadge.innerText = `คะแนน Risk Matrix: ${report.riskScore} (L:${report.likelihood} × S:${report.severity})`;
+
+      const levelTag = document.getElementById('riskLevelTag');
+      levelTag.innerText = report.riskLevel;
+      levelTag.className = `text-xs font-bold px-3 py-1 rounded-full ${report.riskColor}`;
+
+      // แสดง Hierarchy of Controls
+      if (report.controlSuggestion) {
+        document.getElementById('controlTier').innerText = report.controlSuggestion.tier;
+        document.getElementById('controlAction').innerText = report.controlSuggestion.action;
+      }
+
+      // แสดงสรุปรายละเอียด
+      const reporterName = report.isAnonymous 
+        ? 'ไม่ระบุตัวตน (Anonymous)' 
+        : `${report.reporter.firstName} ${report.reporter.lastName} (${report.reporter.gender}, ${report.reporter.age} ปี)`;
+      
+      document.getElementById('summaryReporter').innerText = reporterName;
+      document.getElementById('summaryArea').innerText = report.area;
+      document.getElementById('summaryDatetime').innerText = report.incidentDatetime;
+      document.getElementById('summaryHazard').innerText = report.hazardType;
+      document.getElementById('summaryDesc').innerText = report.description;
+
+      // อัปเดต Timeline สถานะกล่อง (1. รับเรื่องแล้ว / 2. กำลังแก้ไข / 3. ปิดเคสแล้ว)
+      const statusPending = document.getElementById('statusPending');
+      const statusProgress = document.getElementById('statusProgress');
+      const statusClosed = document.getElementById('statusClosed');
+
+      const inactiveClass = 'p-2 rounded-lg bg-slate-100 text-slate-400 font-normal';
+
+      if (report.status === 'In Progress') {
+        statusPending.className = inactiveClass;
+        statusProgress.className = 'p-2 rounded-lg bg-amber-500 text-white font-bold';
+        statusClosed.className = inactiveClass;
+      } else if (report.status === 'Closed') {
+        statusPending.className = inactiveClass;
+        statusProgress.className = inactiveClass;
+        statusClosed.className = 'p-2 rounded-lg bg-emerald-600 text-white font-bold';
+      } else {
+        // สถานะ Pending (รับเรื่องแล้ว)
+        statusPending.className = 'p-2 rounded-lg bg-[#7E212A] text-white font-bold';
+        statusProgress.className = inactiveClass;
+        statusClosed.className = inactiveClass;
+      }
+    });
+  </script>
+</body>
+</html>
