@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RiskCheck - รายงาน Near Miss</title>
+  <!-- Tailwind CSS สำหรับจัดสไตล์หน้าเว็บ -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- กำหนด Palette สีพิเศษตามโจทย์ (#7E212A & #BFD9DC) -->
+  <style>
+    :root {
+      --primary-color: #7E212A;
+      --secondary-color: #BFD9DC;
+    }
+  </style>
+</head>
+<body class="bg-[#BFD9DC]/40 min-h-screen pb-10">
+
+  <!-- Header -->
+  <header class="bg-[#7E212A] text-white p-4 shadow-md sticky top-0 z-10">
+    <div class="max-w-md mx-auto flex justify-between items-center">
+      <h1 class="text-xl font-bold flex items-center gap-2">
+        <span></span> RiskCheck
+      </h1>
+      <span class="text-xs bg-[#7E212A]/80 border border-white/20 px-2.5 py-1 rounded-full font-medium">รายงานเหตุการณ์</span>
+    </div>
+  </header>
+
+  <main class="max-w-md mx-auto p-4 space-y-4">
+
+    <!-- กล่องค้นหาสถานะด้วย รหัสคิว หรือ ชื่อ-นามสกุล -->
+    <div class="bg-white rounded-xl shadow-md p-4 border border-slate-100">
+      <h3 class="text-sm font-bold text-[#7E212A] mb-1 flex items-center gap-1.5">
+        <span></span> ตรวจสอบสถานะการแก้ไข (Check Status)
+      </h3>
+      <p class="text-xs text-slate-500 mb-3">เคยแจ้งเหตุแล้ว? กรอกรหัสติดตาม (Ticket ID) หรือชื่อผู้แจ้งเหตุ เพื่อดูสถานะ</p>
+      
+      <div class="flex gap-2">
+        <input type="text" id="searchTicketId" placeholder="พิมพ์รหัสคิว หรือ ชื่อ-นามสกุล..." class="w-full border border-slate-300 rounded-lg p-2.5 text-xs focus:ring-2 focus:ring-[#7E212A] focus:outline-none font-medium text-slate-700">
+        <button type="button" id="btnCheckStatus" class="bg-[#7E212A] hover:bg-[#631921] text-white text-xs font-bold px-4 py-2.5 rounded-lg transition-colors whitespace-nowrap shadow">
+          ค้นหา
+        </button>
+      </div>
+    </div>
+
+    <!-- กล่องฟอร์มแจ้งเหตุการณ์ใหม่ -->
+    <div class="bg-white rounded-xl shadow-md p-5 border border-slate-100">
+      <h2 class="text-lg font-bold text-slate-800 mb-1">แจ้งเหตุการณ์ Near Miss ใหม่</h2>
+      <p class="text-xs text-slate-500 mb-4">รายงานความเสี่ยงล่วงหน้า ช่วยป้องกันอุบัติเหตุในพื้นที่</p>
+
+      <form id="nearMissForm" class="space-y-4">
+
+        <!-- ส่วนข้อมูลผู้แจ้งเหตุ (ชื่อ นามสกุล อายุ เพศ น้ำหนัก ส่วนสูง) -->
+        <div id="personalInfoContainer" class="space-y-3 bg-[#BFD9DC]/35 p-3.5 rounded-lg border border-[#BFD9DC]">
+          <p class="text-xs font-bold text-[#7E212A] border-b border-[#7E212A]/20 pb-1">ข้อมูลผู้แจ้งเหตุ</p>
+          
+          <!-- ชื่อ - นามสกุล -->
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">ชื่อ *</label>
+              <input type="text" id="reporterFirstName" required placeholder="สมชาย" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#7E212A] focus:outline-none bg-white">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">นามสกุล *</label>
+              <input type="text" id="reporterLastName" required placeholder="ใจดี" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#7E212A] focus:outline-none bg-white">
+            </div>
+          </div>
+
+          <!-- อายุ และ เพศ -->
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">อายุ (ปี) *</label>
+              <input type="number" id="reporterAge" min="15" max="90" required placeholder="เช่น 30" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#7E212A] focus:outline-none bg-white">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">เพศ *</label>
+              <select id="reporterGender" required class="w-full border border-slate-300 rounded-lg p-2 text-sm text-slate-700 focus:ring-2 focus:ring-[#7E212A] focus:outline-none bg-white">
+                <option value="">-- เลือก --</option>
+                <option value="Male">ชาย</option>
+                <option value="Female">หญิง</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- น้ำหนัก และ ส่วนสูง -->
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">น้ำหนัก (kg) *</label>
+              <input type="number" id="reporterWeight" min="30" max="250" step="0.1" required placeholder="เช่น 65.5" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#7E212A] focus:outline-none bg-white">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">ส่วนสูง (cm) *</label>
+              <input type="number" id="reporterHeight" min="100" max="230" step="0.1" required placeholder="เช่น 170" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#7E212A] focus:outline-none bg-white">
+            </div>
+          </div>
+        </div>
+
+        <hr class="border-slate-200 my-2">
+
+        <!-- 1. เลือกพื้นที่ -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1">1. พื้นที่เกิดเหตุ *</label>
+          <select id="area" required class="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 focus:ring-2 focus:ring-[#7E212A] focus:outline-none">
+            <option value="">-- เลือกพื้นที่ --</option>
+            <option value="Line A">ฝั่งการผลิต (Line A)</option>
+            <option value="Line B">ฝั่งการผลิต (Line B)</option>
+            <option value="Warehouse">คลังสินค้า (Warehouse)</option>
+            <option value="Maintenance">แผนกซ่อมบำรุง (Maintenance)</option>
+            <option value="Office">สำนักงาน (Office)</option>
+          </select>
+        </div>
+
+        <!-- 2. วันเวลาที่พบเหตุการณ์ (ระบบ 24 ชั่วโมง แบบ Dropdown) -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1">2. วันเวลาที่พบเหตุการณ์ *</label>
+          <div class="grid grid-cols-5 gap-2">
+            <!-- เลือกวันที่ (3 ช่องแรก) -->
+            <input type="date" id="incidentDate" required class="col-span-3 border border-slate-300 rounded-lg p-2.5 text-sm text-slate-700 focus:ring-2 focus:ring-[#7E212A] focus:outline-none">
+            
+            <!-- เลือกชั่วโมง 00-23 (1 ช่อง) -->
+            <select id="incidentHour" required class="col-span-1 border border-slate-300 rounded-lg p-2.5 text-sm text-slate-700 focus:ring-2 focus:ring-[#7E212A] focus:outline-none">
+              <!-- JS จะสร้าง 00 - 23 ให้อัตโนมัติ -->
+            </select>
+
+            <!-- เลือกนาที 00-59 (1 ช่อง) -->
+            <select id="incidentMinute" required class="col-span-1 border border-slate-300 rounded-lg p-2.5 text-sm text-slate-700 focus:ring-2 focus:ring-[#7E212A] focus:outline-none">
+              <!-- JS จะสร้าง 00 - 59 ให้อัตโนมัติ -->
+            </select>
+          </div>
+          <span class="text-[11px] text-slate-400 mt-1 block">รูปแบบเวลา: (วันที่) (ชั่วโมง: 00-23) (นาที: 00-59)</span>
+        </div>
+
+        <!-- 3. ประเภทอันตราย -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1">3. ประเภทอันตราย *</label>
+          <select id="hazardType" required class="w-full border border-slate-300 rounded-lg p-2.5 text-slate-700 focus:ring-2 focus:ring-[#7E212A] focus:outline-none">
+            <option value="">-- เลือกประเภทอันตราย --</option>
+            <option value="Slip/Trip/Fall">ลื่น/สะดุด/ล้ม</option>
+            <option value="Working at Height">ทำงานบนที่สูง</option>
+            <option value="Chemical">สารเคมีรั่วไหล/สัมผัส</option>
+            <option value="Machinery">เครื่องจักรหนีบ/ตัด</option>
+            <option value="Electrical">กระแสไฟฟ้า/สายไฟชำรุด</option>
+            <option value="Other">อื่น ๆ</option>
+          </select>
+          
+          <!-- ช่องกรอกระบุเพิ่มเติมกรณีเลือก "อื่น ๆ" -->
+          <div id="otherHazardContainer" class="hidden mt-2">
+            <input type="text" id="otherHazardDetail" placeholder="โปรดระบุประเภทอันตราย..." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm text-slate-700 focus:ring-2 focus:ring-[#7E212A] focus:outline-none bg-slate-50">
+          </div>
+        </div>
+
+        <!-- 4. ความรุนแรงที่อาจเกิด (1-5) -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1">4. ความรุนแรงที่อาจเกิด (1-5) *</label>
+          <div class="grid grid-cols-5 gap-1.5 text-center">
+            <label class="cursor-pointer">
+              <input type="radio" name="severity" value="1" required class="peer hidden">
+              <div class="border rounded-lg py-2 peer-checked:bg-emerald-600 peer-checked:text-white hover:bg-slate-50 text-sm font-bold">1</div>
+              <span class="text-[10px] text-slate-500">เล็กน้อย</span>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="severity" value="2" class="peer hidden">
+              <div class="border rounded-lg py-2 peer-checked:bg-lime-500 peer-checked:text-white hover:bg-slate-50 text-sm font-bold">2</div>
+              <span class="text-[10px] text-slate-500">ปฐมพยาบาล</span>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="severity" value="3" class="peer hidden">
+              <div class="border rounded-lg py-2 peer-checked:bg-amber-500 peer-checked:text-white hover:bg-slate-50 text-sm font-bold">3</div>
+              <span class="text-[10px] text-slate-500">หยุดงาน</span>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="severity" value="4" class="peer hidden">
+              <div class="border rounded-lg py-2 peer-checked:bg-orange-600 peer-checked:text-white hover:bg-slate-50 text-sm font-bold">4</div>
+              <span class="text-[10px] text-slate-500">ทุพพลภาพ</span>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="severity" value="5" class="peer hidden">
+              <div class="border rounded-lg py-2 peer-checked:bg-[#7E212A] peer-checked:text-white hover:bg-slate-50 text-sm font-bold">5</div>
+              <span class="text-[10px] text-slate-500">เสียชีวิต</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 5. โอกาสเกิดซ้ำ (1-5) -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1">5. โอกาสเกิดซ้ำ (1-5) *</label>
+          <div class="grid grid-cols-5 gap-1.5 text-center">
+            <label class="cursor-pointer">
+              <input type="radio" name="likelihood" value="1" required class="peer hidden">
+              <div class="border rounded-lg py-2 peer-checked:bg-slate-600 peer-checked:text-white hover:bg-slate-50 text-sm font-bold">1</div>
+              <span class="text-[10px] text-slate-500">แทบไม่เกิด</span>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="likelihood" value="2" class="peer hidden">
+              <div class="border rounded-lg py-2 peer-checked:bg-slate-600 peer-checked:text-white hover:bg-slate-50 text-sm font-bold">2</div>
+              <span class="text-[10px] text-slate-500">นานๆ ครั้ง</span>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="likelihood" value="3" class="peer hidden">
+              <div class="border rounded-lg py-2 peer-checked:bg-slate-600 peer-checked:text-white hover:bg-slate-50 text-sm font-bold">3</div>
+              <span class="text-[10px] text-slate-500">บางครั้ง</span>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="likelihood" value="4" class="peer hidden">
+              <div class="border rounded-lg py-2 peer-checked:bg-slate-600 peer-checked:text-white hover:bg-slate-50 text-sm font-bold">4</div>
+              <span class="text-[10px] text-slate-500">บ่อยครั้ง</span>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="likelihood" value="5" class="peer hidden">
+              <div class="border rounded-lg py-2 peer-checked:bg-[#7E212A] peer-checked:text-white hover:bg-slate-50 text-sm font-bold">5</div>
+              <span class="text-[10px] text-slate-500">ประจำ</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 6. รายละเอียดสั้นๆ -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1">6. รายละเอียดเหตุการณ์ *</label>
+          <textarea id="description" required rows="2" placeholder="เช่น พบคราบน้ำมันบนพื้นทางเดิน ใกล้เครื่องจักร A-02" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-[#7E212A] focus:outline-none"></textarea>
+        </div>
+
+        <!-- 7. รูปถ่าย (ไม่บังคับ) -->
+        <div>
+          <label class="block text-sm font-semibold text-slate-700 mb-1">7. แนบรูปถ่าย (ถ้ามี)</label>
+          <input type="file" id="imageInput" accept="image/*" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-[#BFD9DC]/50 file:text-[#7E212A] hover:file:bg-[#BFD9DC]">
+        </div>
+
+        <!-- ปุ่มกดส่ง -->
+        <button type="submit" class="w-full bg-[#7E212A] hover:bg-[#631921] text-white font-bold py-3 rounded-lg shadow-md transition-colors text-base">
+          ส่งรายงานทันที
+        </button>
+
+      </form>
+    </div>
+  </main>
+
+  <!-- สคริปต์ควบคุม UI และระบบค้นหา -->
+  <script>
+    // 1. สร้างตัวเลือกชั่วโมง (00-23) และนาที (00-59)
+    const hourSelect = document.getElementById('incidentHour');
+    const minuteSelect = document.getElementById('incidentMinute');
+
+    for (let i = 0; i < 24; i++) {
+      const val = String(i).padStart(2, '0');
+      hourSelect.add(new Option(val, val));
+    }
+
+    for (let i = 0; i < 60; i++) {
+      const val = String(i).padStart(2, '0');
+      minuteSelect.add(new Option(val, val));
+    }
+
+    // 2. ดึงวันและเวลาปัจจุบันมาใส่เป็นค่าเริ่มต้น
+    const now = new Date();
+    document.getElementById('incidentDate').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    hourSelect.value = String(now.getHours()).padStart(2, '0');
+    minuteSelect.value = String(now.getMinutes()).padStart(2, '0');
+
+    // 3. ซ่อน/แสดง ช่องระบุประเภทอันตรายเพิ่มเติม
+    const hazardSelect = document.getElementById('hazardType');
+    const otherContainer = document.getElementById('otherHazardContainer');
+    const otherInput = document.getElementById('otherHazardDetail');
+
+    hazardSelect.addEventListener('change', function() {
+      if (this.value === 'Other') {
+        otherContainer.classList.remove('hidden');
+        otherInput.required = true;
+      } else {
+        otherContainer.classList.add('hidden');
+        otherInput.required = false;
+        otherInput.value = '';
+      }
+    });
+
+    // 4. ระบบค้นหาสถานะด้วย Ticket ID หรือ ชื่อ-นามสกุล
+    const btnCheckStatus = document.getElementById('btnCheckStatus');
+    const searchTicketInput = document.getElementById('searchTicketId');
+
+    if (btnCheckStatus && searchTicketInput) {
+      const handleSearch = () => {
+        const query = searchTicketInput.value.trim().toLowerCase();
+        if (!query) {
+          alert('กรุณากรอกรหัสติดตามเหตุการณ์ (Ticket ID) หรือชื่อผู้แจ้งเหตุ');
+          return;
+        }
+
+        // ดึงข้อมูลเคสทั้งหมดจาก LocalStorage
+        const reports = JSON.parse(localStorage.getItem('riskCheckReports')) || [];
+        
+        // ค้นหาทั้งจาก Ticket ID และ ชื่อ/นามสกุล
+        const matchedReports = reports.filter(r => {
+          const idMatch = r.id && r.id.toLowerCase() === query;
+          const firstName = r.reporter && r.reporter.firstName ? r.reporter.firstName.toLowerCase() : '';
+          const lastName = r.reporter && r.reporter.lastName ? r.reporter.lastName.toLowerCase() : '';
+          const fullName = `${firstName} ${lastName}`.trim();
+
+          return idMatch || firstName.includes(query) || lastName.includes(query) || fullName.includes(query);
+        });
+
+        if (matchedReports.length > 0) {
+          // ดึงเคสล่าสุดที่พบ (รายการแรก)
+          window.location.href = `success.html?ticketId=${matchedReports[0].id}`;
+        } else {
+          alert(`ไม่พบข้อมูลการแจ้งเหตุจาก "${searchTicketInput.value.trim()}" ในระบบ`);
+        }
+      };
+
+      btnCheckStatus.addEventListener('click', handleSearch);
+      searchTicketInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleSearch();
+        }
+      });
+    }
+  </script>
+
+  <!-- สคริปต์ภายนอกสำหรับบันทึกและคำนวณข้อมูล -->
+  <script src="js/app.js"></script>
+</body>
+</html>

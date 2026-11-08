@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RiskCheck - Safety Officer Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --primary-color: #7E212A;
+      --secondary-color: #BFD9DC;
+    }
+  </style>
+</head>
+<body class="bg-[#BFD9DC]/30 min-h-screen text-slate-800">
+
+  <!-- Header & Navigation -->
+  <header class="bg-[#7E212A] text-white p-4 shadow-md sticky top-0 z-20">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <h1 class="text-xl font-bold flex items-center gap-2">
+          <span>🛡️</span> RiskCheck
+        </h1>
+        <span class="text-xs bg-white/20 border border-white/30 px-2.5 py-0.5 rounded-full">Safety Officer Dashboard</span>
+      </div>
+      <a href="index.html" class="text-xs bg-white text-[#7E212A] hover:bg-slate-100 font-bold px-3 py-1.5 rounded-lg transition-colors">
+        + ฟอร์มแจ้งเหตุการณ์
+      </a>
+    </div>
+  </header>
+
+  <!-- Login Overlay สำหรับ Admin (ถ้าใช้ระบบ Passcode) -->
+  <div id="adminLoginOverlay" class="fixed inset-0 bg-slate-900 z-[100] flex flex-col items-center justify-center p-4">
+    <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full text-center space-y-6">
+      <div class="inline-flex items-center justify-center w-16 h-16 bg-[#7E212A]/10 text-[#7E212A] rounded-full mb-2">
+        <span class="text-3xl">🛡️</span>
+      </div>
+      <h2 class="text-2xl font-bold text-slate-800">Admin Dashboard</h2>
+      <p class="text-sm text-slate-500">กรุณาใส่รหัสผ่านเพื่อเข้าสู่ระบบจัดการเคส</p>
+      
+      <form id="adminLoginForm" class="space-y-4">
+        <input type="password" id="adminPassword" placeholder="รหัสผ่าน Admin" required
+          class="w-full border border-slate-300 rounded-lg px-4 py-3 text-center tracking-widest focus:ring-2 focus:ring-[#7E212A] focus:outline-none">
+        <p id="loginError" class="text-xs text-red-500 hidden font-bold">รหัสผ่านไม่ถูกต้อง!</p>
+        <button type="submit" class="w-full bg-[#7E212A] hover:bg-[#631921] text-white font-bold py-3 rounded-lg transition-colors">
+          เข้าสู่ระบบ
+        </button>
+      </form>
+      <a href="index.html" class="block text-xs text-slate-400 hover:text-slate-600 underline mt-4">กลับไปหน้าฟอร์มแจ้งเหตุ</a>
+    </div>
+  </div>
+
+  <main id="dashboardContent" class="hidden max-w-7xl mx-auto p-4 md:p-6 space-y-6">
+
+    <!-- KPI Metric Summary Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
+        <div>
+          <span class="text-xs font-semibold text-slate-600">เหตุการณ์ทั้งหมดสะสม</span>
+          <p class="text-[10px] text-slate-400 mt-0.5 leading-tight">นับเคสทั้งหมดในระบบ ใช้ดูปริมาณการแจ้งเหตุภาพรวม</p>
+        </div>
+        <div class="flex items-baseline justify-between mt-2">
+          <span id="kpiTotal" class="text-2xl font-extrabold text-slate-800">0</span>
+          <span class="text-xs text-slate-400">รายการ</span>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
+        <div>
+          <span class="text-xs font-semibold text-red-600">เคสเสี่ยงสูงที่ยังค้างอยู่</span>
+          <p class="text-[10px] text-slate-400 mt-0.5 leading-tight">นับเคสความเสี่ยงวิกฤต/สูงที่ยังไม่ปิด ต้องรีบจัดการทันที</p>
+        </div>
+        <div class="flex items-baseline justify-between mt-2">
+          <span id="kpiHighRisk" class="text-2xl font-extrabold text-[#7E212A]">0</span>
+          <span class="text-xs text-red-400">เคส</span>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
+        <div>
+          <span class="text-xs font-semibold text-amber-600">เคสใหม่รอดำเนินการ</span>
+          <p class="text-[10px] text-slate-400 mt-0.5 leading-tight">นับเคส Pending ที่เพิ่งเข้ามา ต้องรีบเข้าไปตรวจสอบและแก้ไข</p>
+        </div>
+        <div class="flex items-baseline justify-between mt-2">
+          <span id="kpiPending" class="text-2xl font-extrabold text-amber-600">0</span>
+          <span class="text-xs text-amber-400">เคส</span>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
+        <div>
+          <span class="text-xs font-semibold text-emerald-600">แก้ไขและปิดเคสแล้ว</span>
+          <p class="text-[10px] text-slate-400 mt-0.5 leading-tight">นับเคส Closed ที่จัดการเสร็จสิ้น ใช้ดูความคืบหน้าการทำงาน</p>
+        </div>
+        <div class="flex items-baseline justify-between mt-2">
+          <span id="kpiClosed" class="text-2xl font-extrabold text-emerald-600">0</span>
+          <span class="text-xs text-emerald-400">เคส</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 🎯 ส่วนที่ 1: Risk Matrix 5x5 Heatmap -->
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 space-y-4">
+      <div class="border-b pb-3">
+        <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+          <span>🟩</span> ความเสี่ยงที่ยังต้องจัดการ (Risk Matrix)
+        </h3>
+        <p class="text-xs text-slate-500 font-medium mt-1">แสดงเฉพาะเคสที่ยังไม่ปิด ยิ่งอยู่มุมขวาบน (โอกาสสูง ความรุนแรงสูง) ยิ่งควรรีบจัดการ L = โอกาส, S = ความรุนแรง, ตัวเลข = จำนวนเคส</p>
+      </div>
+
+      <div class="overflow-x-auto flex justify-center py-3">
+        <div class="w-full max-w-2xl min-w-[550px] mx-auto">
+          <div class="grid grid-cols-6 text-center text-sm font-bold text-slate-600 mb-2">
+            <div></div>
+            <div>S1</div>
+            <div>S2</div>
+            <div>S3</div>
+            <div>S4</div>
+            <div>S5</div>
+          </div>
+          <div id="matrixGridContainer" class="space-y-2">
+            <!-- JS จะสร้าง Heatmap Grid 5x5 ตรงนี้ -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 📊 ส่วนที่ 2: สรุปสถิติเหตุการณ์รายพื้นที่ (ข้อมูลจริง) -->
+    <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 space-y-3">
+      <div class="border-b pb-2">
+        <h3 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+          <span>📍</span> สรุปสถิติเหตุการณ์รายพื้นที่
+        </h3>
+        <p class="text-[11px] text-slate-500 mt-1">จำนวนรายงานทั้งหมดแยกตามพื้นที่และสถานะ ใช้ดูว่าพื้นที่ไหนมีรายงานมากที่สุดเพื่อจัดสรรคนไปจัดการ</p>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200">
+            <tr>
+              <th class="p-2.5">พื้นที่</th>
+              <th class="p-2.5 text-center">จำนวนเคสรวม</th>
+              <th class="p-2.5 text-center text-red-600">ความเสี่ยงสูง/วิกฤต</th>
+              <th class="p-2.5 text-center text-amber-600">รอดำเนินการ</th>
+              <th class="p-2.5 text-center text-emerald-600">ปิดเคสแล้ว</th>
+            </tr>
+          </thead>
+          <tbody id="areaSummaryTableBody" class="divide-y divide-slate-100 font-medium text-slate-700">
+            <!-- JS จะคำนวณและสร้างแถวตารางตรงนี้ -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 📈 ส่วนที่ 3: กราฟสถิติตามเดือน -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 space-y-4">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-3">
+        <div>
+          <h3 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
+            <span>📊</span> รายงานสถิติตามช่วงเดือน
+          </h3>
+          <p class="text-[11px] text-slate-500 mt-1">กราฟแสดงปริมาณเคสรายวันและสัดส่วนตามพื้นที่ ใช้ดักจับเทรนด์ว่าอุบัติเหตุเกิดบ่อยช่วงไหน</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <label for="chartMonthPicker" class="text-xs font-bold text-[#7E212A]">เลือกเดือน:</label>
+          <input type="month" id="chartMonthPicker" class="border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-700 focus:ring-2 focus:ring-[#7E212A] focus:outline-none bg-slate-50 cursor-pointer">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="lg:col-span-2">
+          <div class="h-64 relative">
+            <canvas id="monthlyTrendChart"></canvas>
+          </div>
+        </div>
+        <div>
+          <div class="h-64 relative flex items-center justify-center">
+            <canvas id="monthlyAreaChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters & Table Section -->
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+      <div class="flex flex-wrap gap-2 items-center text-xs">
+        <span class="font-bold text-slate-600">ตัวกรองตาราง:</span>
+        <select id="filterArea" class="border border-slate-300 rounded-lg p-2 text-xs focus:outline-none"><option value="">ทุกพื้นที่</option><option value="Line A">ฝั่งการผลิต (Line A)</option><option value="Line B">ฝั่งการผลิต (Line B)</option><option value="Warehouse">คลังสินค้า (Warehouse)</option><option value="Maintenance">แผนกซ่อมบำรุง (Maintenance)</option><option value="Office">สำนักงาน (Office)</option></select>
+        <select id="filterRisk" class="border border-slate-300 rounded-lg p-2 text-xs focus:outline-none"><option value="">ทุกระดับความเสี่ยง</option><option value="วิกฤต (Critical)">วิกฤต (Critical)</option><option value="สูง (High)">สูง (High)</option><option value="กลาง (Medium)">กลาง (Medium)</option><option value="ต่ำ (Low)">ต่ำ (Low)</option></select>
+        <select id="filterStatus" class="border border-slate-300 rounded-lg p-2 text-xs focus:outline-none"><option value="">ทุกสถานะ</option><option value="Pending">1. รับเรื่องแล้ว (Pending)</option><option value="In Progress">2. กำลังแก้ไข (In Progress)</option><option value="Closed">3. ปิดเคสแล้ว (Closed)</option></select>
+      </div>
+      <button id="btnClearFilter" class="text-xs text-slate-500 hover:text-[#7E212A] underline self-end md:self-auto">ล้างตัวกรองทั้งหมด</button>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+      <div class="p-4 border-b border-slate-100 flex justify-between items-center">
+        <h2 class="font-bold text-sm text-slate-800">รายการแจ้งเหตุการณ์ทั้งหมด</h2>
+        <span id="recordCount" class="text-xs text-slate-400">แสดง 0 รายการ</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-50 text-slate-600 uppercase font-semibold border-b border-slate-100">
+            <tr>
+              <th class="p-3">Ticket ID</th>
+              <th class="p-3">วันเวลา</th>
+              <th class="p-3">ผู้แจ้งเหตุ</th>
+              <th class="p-3">พื้นที่</th>
+              <th class="p-3">ประเภทอันตราย</th>
+              <th class="p-3 text-center">Risk Score</th>
+              <th class="p-3 text-center">สถานะ</th>
+              <th class="p-3 text-center">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="reportTableBody" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal -->
+  <div id="detailModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-5 space-y-4">
+      <div class="flex justify-between items-center border-b pb-2">
+        <div>
+          <h3 class="font-bold text-base text-slate-800">จัดการเคสเหตุการณ์</h3>
+          <span id="modalTicketId" class="text-xs font-mono text-[#7E212A] font-bold">RC-XXXX</span>
+        </div>
+        <button id="btnCloseModal" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
+      </div>
+      <div class="space-y-2 text-xs bg-slate-50 p-3 rounded-lg border border-slate-200">
+        <p><strong>ผู้แจ้ง:</strong> <span id="modalReporter">-</span></p>
+        <p><strong>ร่างกาย:</strong> <span id="modalPhysical">-</span></p>
+        <p><strong>พื้นที่ / วันเวลา:</strong> <span id="modalAreaDatetime">-</span></p>
+        <p><strong>ประเภทอันตราย:</strong> <span id="modalHazard">-</span></p>
+        <p><strong>รายละเอียด:</strong> <span id="modalDescription" class="text-slate-700 block mt-1 bg-white p-2 rounded border border-slate-200">-</span></p>
+      </div>
+      <div id="modalImageContainer" class="hidden">
+        <span class="text-xs font-semibold text-slate-600 block mb-1">รูปถ่ายประกอบ:</span>
+        <img id="modalImage" src="" alt="Incident Photo" class="w-full h-48 object-cover rounded-lg border border-slate-200">
+      </div>
+      <div class="bg-[#BFD9DC]/30 p-3 rounded-lg border border-[#BFD9DC] text-xs space-y-1">
+        <span class="font-bold text-[#7E212A] block">💡 ข้อเสนอแนะเบื้องต้น (OHS Control):</span>
+        <p id="modalOhsRecommendation" class="text-slate-700">-</p>
+      </div>
+      <form id="actionForm" class="space-y-3 pt-2 border-t">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">ปรับเปลี่ยนสถานะเคส *</label>
+          <select id="updateStatus" class="w-full border border-slate-300 rounded-lg p-2 text-xs font-bold focus:ring-2 focus:ring-[#7E212A] focus:outline-none">
+            <option value="Pending">1. รับเรื่องแล้ว (Pending)</option>
+            <option value="In Progress">2. กำลังแก้ไข (In Progress)</option>
+            <option value="Closed">3. ปิดเคสเรียบร้อย (Closed)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">บันทึกมาตรการที่ดำเนินการ (Action Taken)</label>
+          <textarea id="updateActionTaken" rows="3" placeholder="ระบุการแก้ไข..." class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-[#7E212A] focus:outline-none"></textarea>
+        </div>
+        <button type="submit" class="w-full bg-[#7E212A] hover:bg-[#631921] text-white font-bold py-2.5 rounded-lg text-xs shadow transition-colors">
+          บันทึกการอัปเดต
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
