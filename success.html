@@ -144,11 +144,23 @@
         levelTag.innerText = report.risk_level || 'ไม่ระบุ';
         levelTag.className = `text-xs font-bold px-3 py-1 rounded-full ${report.risk_color || 'bg-slate-200 text-slate-700'}`;
 
-        // มาตรการ OHS
-        if (report.control_tier) document.getElementById('controlTier').innerText = report.control_tier;
-        if (report.control_action) document.getElementById('controlAction').innerText = report.control_action;
+        // ตารางแปลงระดับการควบคุม OHS เป็นภาษาไทย
+        const controlTierNamesTH = {
+          'Elimination / Substitution': 'การขจัดอันตราย / การทดแทน (Elimination & Substitution)',
+          'Engineering Controls': 'การควบคุมทางวิศวกรรม (Engineering Controls)',
+          'Engineering / Admin Controls': 'การควบคุมทางวิศวกรรมและการบริหารจัดการ (Engineering & Admin Controls)',
+          'Administrative Controls': 'การควบคุมทางบริหารจัดการ (Administrative Controls)',
+          'PPE': 'อุปกรณ์ป้องกันภัยส่วนบุคคล (PPE)'
+        };
 
-        // รายละเอียด
+        if (report.control_tier) {
+          document.getElementById('controlTier').innerText = controlTierNamesTH[report.control_tier] || report.control_tier;
+        }
+        if (report.control_action) {
+          document.getElementById('controlAction').innerText = report.control_action;
+        }
+
+        // รายละเอียดภาษาไทย
         const areaNamesTH = {
           'Line A': 'ฝั่งการผลิต (Line A)',
           'Line B': 'ฝั่งการผลิต (Line B)',
