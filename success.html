@@ -73,7 +73,7 @@
         มาตรการตอบสนองแนะนำ (OHS Controls)
       </h3>
       <div class="bg-[#BFD9DC]/30 p-3 rounded-lg border border-[#BFD9DC] text-xs text-slate-700 space-y-1">
-        <p><strong class="text-[#7E212A]">ระดับการควบคุม:</strong> <span id="controlTier">-</span></p>
+        <p><strong class="text-[#7E212A]">ระดับการควบคุม:</strong> <span id="controlTier" class="font-semibold">-</span></p>
         <p><strong class="text-[#7E212A]">ข้อเสนอแนะ:</strong> <span id="controlAction">-</span></p>
       </div>
     </div>
@@ -136,7 +136,7 @@
           return;
         }
 
-        // แสดงคะแนนและระดับความเสี่ยง
+        // 1. แสดงคะแนนและระดับความเสี่ยง
         const scoreBadge = document.getElementById('riskScoreBadge');
         scoreBadge.innerText = `คะแนน Risk Matrix: ${report.risk_score} (L:${report.likelihood} × S:${report.severity})`;
 
@@ -144,13 +144,16 @@
         levelTag.innerText = report.risk_level || 'ไม่ระบุ';
         levelTag.className = `text-xs font-bold px-3 py-1 rounded-full ${report.risk_color || 'bg-slate-200 text-slate-700'}`;
 
-        // ตารางแปลงระดับการควบคุม OHS เป็นภาษาไทย
+        // 2. แปลงระดับการควบคุม OHS (Control Tier) เป็นภาษาไทยแบบสมบูรณ์
         const controlTierNamesTH = {
-          'Elimination / Substitution': 'การขจัดอันตราย / การทดแทน (Elimination & Substitution)',
+          'Elimination / Substitution': 'การขจัดอันตราย และ การทดแทน (Elimination & Substitution)',
+          'Elimination / Engineering': 'การขจัดอันตราย และ การควบคุมทางวิศวกรรม (Elimination & Engineering)',
           'Engineering Controls': 'การควบคุมทางวิศวกรรม (Engineering Controls)',
-          'Engineering / Admin Controls': 'การควบคุมทางวิศวกรรมและการบริหารจัดการ (Engineering & Admin Controls)',
+          'Engineering Controls (LOTO)': 'การควบคุมทางวิศวกรรม / ระบบ LOTO (Engineering & Lockout/Tagout)',
+          'Engineering / Admin Controls': 'การควบคุมทางวิศวกรรม และ การบริหารจัดการ (Engineering & Admin Controls)',
           'Administrative Controls': 'การควบคุมทางบริหารจัดการ (Administrative Controls)',
-          'PPE': 'อุปกรณ์ป้องกันภัยส่วนบุคคล (PPE)'
+          'PPE & Admin Controls': 'อุปกรณ์ป้องกันภัยส่วนบุคคล และ การบริหารจัดการ (PPE & Admin Controls)',
+          'PPE': 'อุปกรณ์ป้องกันภัยส่วนบุคคล (Personal Protective Equipment)'
         };
 
         if (report.control_tier) {
@@ -160,7 +163,7 @@
           document.getElementById('controlAction').innerText = report.control_action;
         }
 
-        // รายละเอียดภาษาไทย
+        // 3. แปลงรายละเอียดข้อมูลเป็นภาษาไทย
         const areaNamesTH = {
           'Line A': 'ฝั่งการผลิต (Line A)',
           'Line B': 'ฝั่งการผลิต (Line B)',
@@ -189,7 +192,7 @@
         document.getElementById('summaryHazard').innerText = hazardNamesTH[report.hazard_type] || report.hazard_type || '-';
         document.getElementById('summaryDesc').innerText = report.description || '-';
 
-        // แสดงรูปภาพถ้ามี
+        // 4. แสดงรูปภาพถ้ามี
         if (report.image_url) {
           const imgContainer = document.getElementById('summaryImageContainer');
           const img = document.getElementById('summaryImage');
@@ -197,7 +200,7 @@
           imgContainer.classList.remove('hidden');
         }
 
-        // สถานะการดำเนินงาน
+        // 5. ปรับแถบสถานะการดำเนินงาน
         const statusPending = document.getElementById('statusPending');
         const statusProgress = document.getElementById('statusProgress');
         const statusClosed = document.getElementById('statusClosed');
