@@ -4,9 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RiskCheck - รายงาน Near Miss</title>
-  <!-- Tailwind CSS สำหรับจัดสไตล์หน้าเว็บ -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- กำหนด Palette สีพิเศษตามโจทย์ (#7E212A & #BFD9DC) -->
   <style>
     :root {
       --primary-color: #7E212A;
@@ -20,7 +18,7 @@
   <header class="bg-[#7E212A] text-white p-4 shadow-md sticky top-0 z-10">
     <div class="max-w-md mx-auto flex justify-between items-center">
       <h1 class="text-xl font-bold flex items-center gap-2">
-        <span></span> RiskCheck
+        RiskCheck
       </h1>
       <span class="text-xs bg-[#7E212A]/80 border border-white/20 px-2.5 py-1 rounded-full font-medium">รายงานเหตุการณ์</span>
     </div>
@@ -31,7 +29,7 @@
     <!-- กล่องค้นหาสถานะด้วย รหัสคิว หรือ ชื่อ-นามสกุล -->
     <div class="bg-white rounded-xl shadow-md p-4 border border-slate-100">
       <h3 class="text-sm font-bold text-[#7E212A] mb-1 flex items-center gap-1.5">
-        <span></span> ตรวจสอบสถานะการแก้ไข (Check Status)
+        ตรวจสอบสถานะการแก้ไข (Check Status)
       </h3>
       <p class="text-xs text-slate-500 mb-3">เคยแจ้งเหตุแล้ว? กรอกรหัสติดตาม (Ticket ID) หรือชื่อผู้แจ้งเหตุ เพื่อดูสถานะ</p>
       
@@ -50,7 +48,7 @@
 
       <form id="nearMissForm" class="space-y-4">
 
-        <!-- ส่วนข้อมูลผู้แจ้งเหตุ (ชื่อ นามสกุล อายุ เพศ น้ำหนัก ส่วนสูง) -->
+        <!-- ส่วนข้อมูลผู้แจ้งเหตุ (ชื่อ นามสกุล อายุ เพศ) -->
         <div id="personalInfoContainer" class="space-y-3 bg-[#BFD9DC]/35 p-3.5 rounded-lg border border-[#BFD9DC]">
           <p class="text-xs font-bold text-[#7E212A] border-b border-[#7E212A]/20 pb-1">ข้อมูลผู้แจ้งเหตุ</p>
           
@@ -81,18 +79,6 @@
               </select>
             </div>
           </div>
-
-          <!-- น้ำหนัก และ ส่วนสูง -->
-          <div class="grid grid-cols-2 gap-2">
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">น้ำหนัก (kg) *</label>
-              <input type="number" id="reporterWeight" min="30" max="250" step="0.1" required placeholder="เช่น 65.5" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#7E212A] focus:outline-none bg-white">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">ส่วนสูง (cm) *</label>
-              <input type="number" id="reporterHeight" min="100" max="230" step="0.1" required placeholder="เช่น 170" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-[#7E212A] focus:outline-none bg-white">
-            </div>
-          </div>
         </div>
 
         <hr class="border-slate-200 my-2">
@@ -110,22 +96,13 @@
           </select>
         </div>
 
-        <!-- 2. วันเวลาที่พบเหตุการณ์ (ระบบ 24 ชั่วโมง แบบ Dropdown) -->
+        <!-- 2. วันเวลาที่พบเหตุการณ์ -->
         <div>
           <label class="block text-sm font-semibold text-slate-700 mb-1">2. วันเวลาที่พบเหตุการณ์ *</label>
           <div class="grid grid-cols-5 gap-2">
-            <!-- เลือกวันที่ (3 ช่องแรก) -->
             <input type="date" id="incidentDate" required class="col-span-3 border border-slate-300 rounded-lg p-2.5 text-sm text-slate-700 focus:ring-2 focus:ring-[#7E212A] focus:outline-none">
-            
-            <!-- เลือกชั่วโมง 00-23 (1 ช่อง) -->
-            <select id="incidentHour" required class="col-span-1 border border-slate-300 rounded-lg p-2.5 text-sm text-slate-700 focus:ring-2 focus:ring-[#7E212A] focus:outline-none">
-              <!-- JS จะสร้าง 00 - 23 ให้อัตโนมัติ -->
-            </select>
-
-            <!-- เลือกนาที 00-59 (1 ช่อง) -->
-            <select id="incidentMinute" required class="col-span-1 border border-slate-300 rounded-lg p-2.5 text-sm text-slate-700 focus:ring-2 focus:ring-[#7E212A] focus:outline-none">
-              <!-- JS จะสร้าง 00 - 59 ให้อัตโนมัติ -->
-            </select>
+            <select id="incidentHour" required class="col-span-1 border border-slate-300 rounded-lg p-2.5 text-sm text-slate-700 focus:ring-2 focus:ring-[#7E212A] focus:outline-none"></select>
+            <select id="incidentMinute" required class="col-span-1 border border-slate-300 rounded-lg p-2.5 text-sm text-slate-700 focus:ring-2 focus:ring-[#7E212A] focus:outline-none"></select>
           </div>
           <span class="text-[11px] text-slate-400 mt-1 block">รูปแบบเวลา: (วันที่) (ชั่วโมง: 00-23) (นาที: 00-59)</span>
         </div>
@@ -143,7 +120,6 @@
             <option value="Other">อื่น ๆ</option>
           </select>
           
-          <!-- ช่องกรอกระบุเพิ่มเติมกรณีเลือก "อื่น ๆ" -->
           <div id="otherHazardContainer" class="hidden mt-2">
             <input type="text" id="otherHazardDetail" placeholder="โปรดระบุประเภทอันตราย..." class="w-full border border-slate-300 rounded-lg p-2.5 text-sm text-slate-700 focus:ring-2 focus:ring-[#7E212A] focus:outline-none bg-slate-50">
           </div>
@@ -234,9 +210,7 @@
     </div>
   </main>
 
-  <!-- สคริปต์ควบคุม UI และระบบค้นหา -->
   <script>
-    // 1. สร้างตัวเลือกชั่วโมง (00-23) และนาที (00-59)
     const hourSelect = document.getElementById('incidentHour');
     const minuteSelect = document.getElementById('incidentMinute');
 
@@ -250,13 +224,11 @@
       minuteSelect.add(new Option(val, val));
     }
 
-    // 2. ดึงวันและเวลาปัจจุบันมาใส่เป็นค่าเริ่มต้น
     const now = new Date();
     document.getElementById('incidentDate').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     hourSelect.value = String(now.getHours()).padStart(2, '0');
     minuteSelect.value = String(now.getMinutes()).padStart(2, '0');
 
-    // 3. ซ่อน/แสดง ช่องระบุประเภทอันตรายเพิ่มเติม
     const hazardSelect = document.getElementById('hazardType');
     const otherContainer = document.getElementById('otherHazardContainer');
     const otherInput = document.getElementById('otherHazardDetail');
@@ -272,7 +244,6 @@
       }
     });
 
-    // 4. ระบบค้นหาสถานะด้วย Ticket ID หรือ ชื่อ-นามสกุล
     const btnCheckStatus = document.getElementById('btnCheckStatus');
     const searchTicketInput = document.getElementById('searchTicketId');
 
@@ -284,10 +255,8 @@
           return;
         }
 
-        // ดึงข้อมูลเคสทั้งหมดจาก LocalStorage
         const reports = JSON.parse(localStorage.getItem('riskCheckReports')) || [];
         
-        // ค้นหาทั้งจาก Ticket ID และ ชื่อ/นามสกุล
         const matchedReports = reports.filter(r => {
           const idMatch = r.id && r.id.toLowerCase() === query;
           const firstName = r.reporter && r.reporter.firstName ? r.reporter.firstName.toLowerCase() : '';
@@ -298,7 +267,6 @@
         });
 
         if (matchedReports.length > 0) {
-          // ดึงเคสล่าสุดที่พบ (รายการแรก)
           window.location.href = `success.html?ticketId=${matchedReports[0].id}`;
         } else {
           alert(`ไม่พบข้อมูลการแจ้งเหตุจาก "${searchTicketInput.value.trim()}" ในระบบ`);
@@ -315,7 +283,6 @@
     }
   </script>
 
-  <!-- สคริปต์ภายนอกสำหรับบันทึกและคำนวณข้อมูล -->
   <script src="js/app.js"></script>
 </body>
 </html>

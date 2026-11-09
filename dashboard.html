@@ -20,21 +20,28 @@
     <div class="max-w-7xl mx-auto flex justify-between items-center">
       <div class="flex items-center gap-3">
         <h1 class="text-xl font-bold flex items-center gap-2">
-          <span>🛡️</span> RiskCheck
+          RiskCheck
         </h1>
         <span class="text-xs bg-white/20 border border-white/30 px-2.5 py-0.5 rounded-full">Safety Officer Dashboard</span>
       </div>
-      <a href="index.html" class="text-xs bg-white text-[#7E212A] hover:bg-slate-100 font-bold px-3 py-1.5 rounded-lg transition-colors">
-        + ฟอร์มแจ้งเหตุการณ์
-      </a>
+      
+      <div class="flex items-center gap-2">
+        <button id="btnOpenTrash" class="text-xs bg-slate-800 hover:bg-slate-900 text-white font-bold px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
+          <span>ถังขยะ</span>
+          <span id="trashBadge" class="bg-red-500 text-white text-[10px] px-1.5 py-0.2 rounded-full font-extrabold">0</span>
+        </button>
+        <a href="index.html" class="text-xs bg-white text-[#7E212A] hover:bg-slate-100 font-bold px-3 py-1.5 rounded-lg transition-colors">
+          + ฟอร์มแจ้งเหตุการณ์
+        </a>
+      </div>
     </div>
   </header>
 
-  <!-- Login Overlay สำหรับ Admin (ถ้าใช้ระบบ Passcode) -->
+  <!-- Login Overlay สำหรับ Admin -->
   <div id="adminLoginOverlay" class="fixed inset-0 bg-slate-900 z-[100] flex flex-col items-center justify-center p-4">
     <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-sm w-full text-center space-y-6">
-      <div class="inline-flex items-center justify-center w-16 h-16 bg-[#7E212A]/10 text-[#7E212A] rounded-full mb-2">
-        <span class="text-3xl">🛡️</span>
+      <div class="inline-flex items-center justify-center w-16 h-16 bg-[#7E212A]/10 text-[#7E212A] rounded-full mb-2 font-bold text-2xl">
+        RC
       </div>
       <h2 class="text-2xl font-bold text-slate-800">Admin Dashboard</h2>
       <p class="text-sm text-slate-500">กรุณาใส่รหัสผ่านเพื่อเข้าสู่ระบบจัดการเคส</p>
@@ -100,11 +107,11 @@
       </div>
     </div>
 
-    <!-- 🎯 ส่วนที่ 1: Risk Matrix 5x5 Heatmap -->
+    <!-- ส่วนที่ 1: Risk Matrix 5x5 Heatmap -->
     <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 space-y-4">
       <div class="border-b pb-3">
         <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
-          <span>🟩</span> ความเสี่ยงที่ยังต้องจัดการ (Risk Matrix)
+          ความเสี่ยงที่ยังต้องจัดการ (Risk Matrix)
         </h3>
         <p class="text-xs text-slate-500 font-medium mt-1">แสดงเฉพาะเคสที่ยังไม่ปิด ยิ่งอยู่มุมขวาบน (โอกาสสูง ความรุนแรงสูง) ยิ่งควรรีบจัดการ L = โอกาส, S = ความรุนแรง, ตัวเลข = จำนวนเคส</p>
       </div>
@@ -119,18 +126,16 @@
             <div>S4</div>
             <div>S5</div>
           </div>
-          <div id="matrixGridContainer" class="space-y-2">
-            <!-- JS จะสร้าง Heatmap Grid 5x5 ตรงนี้ -->
-          </div>
+          <div id="matrixGridContainer" class="space-y-2"></div>
         </div>
       </div>
     </div>
 
-    <!-- 📊 ส่วนที่ 2: สรุปสถิติเหตุการณ์รายพื้นที่ (ข้อมูลจริง) -->
+    <!-- ส่วนที่ 2: สรุปสถิติเหตุการณ์รายพื้นที่ -->
     <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-100 space-y-3">
       <div class="border-b pb-2">
         <h3 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
-          <span>📍</span> สรุปสถิติเหตุการณ์รายพื้นที่
+          สรุปสถิติเหตุการณ์รายพื้นที่
         </h3>
         <p class="text-[11px] text-slate-500 mt-1">จำนวนรายงานทั้งหมดแยกตามพื้นที่และสถานะ ใช้ดูว่าพื้นที่ไหนมีรายงานมากที่สุดเพื่อจัดสรรคนไปจัดการ</p>
       </div>
@@ -146,19 +151,17 @@
               <th class="p-2.5 text-center text-emerald-600">ปิดเคสแล้ว</th>
             </tr>
           </thead>
-          <tbody id="areaSummaryTableBody" class="divide-y divide-slate-100 font-medium text-slate-700">
-            <!-- JS จะคำนวณและสร้างแถวตารางตรงนี้ -->
-          </tbody>
+          <tbody id="areaSummaryTableBody" class="divide-y divide-slate-100 font-medium text-slate-700"></tbody>
         </table>
       </div>
     </div>
 
-    <!-- 📈 ส่วนที่ 3: กราฟสถิติตามเดือน -->
+    <!-- ส่วนที่ 3: กราฟสถิติตามเดือน -->
     <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 space-y-4">
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-3">
         <div>
           <h3 class="text-sm font-bold text-slate-800 flex items-center gap-1.5">
-            <span>📊</span> รายงานสถิติตามช่วงเดือน
+            รายงานสถิติตามช่วงเดือน
           </h3>
           <p class="text-[11px] text-slate-500 mt-1">กราฟแสดงปริมาณเคสรายวันและสัดส่วนตามพื้นที่ ใช้ดักจับเทรนด์ว่าอุบัติเหตุเกิดบ่อยช่วงไหน</p>
         </div>
@@ -218,7 +221,7 @@
     </div>
   </main>
 
-  <!-- Modal -->
+  <!-- Modal สำหรับจัดการเคส -->
   <div id="detailModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
     <div class="bg-white rounded-xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-5 space-y-4">
       <div class="flex justify-between items-center border-b pb-2">
@@ -230,7 +233,7 @@
       </div>
       <div class="space-y-2 text-xs bg-slate-50 p-3 rounded-lg border border-slate-200">
         <p><strong>ผู้แจ้ง:</strong> <span id="modalReporter">-</span></p>
-        <p><strong>ร่างกาย:</strong> <span id="modalPhysical">-</span></p>
+        <p><strong>ข้อมูลทั่วไป:</strong> <span id="modalPhysical">-</span></p>
         <p><strong>พื้นที่ / วันเวลา:</strong> <span id="modalAreaDatetime">-</span></p>
         <p><strong>ประเภทอันตราย:</strong> <span id="modalHazard">-</span></p>
         <p><strong>รายละเอียด:</strong> <span id="modalDescription" class="text-slate-700 block mt-1 bg-white p-2 rounded border border-slate-200">-</span></p>
@@ -240,9 +243,10 @@
         <img id="modalImage" src="" alt="Incident Photo" class="w-full h-48 object-cover rounded-lg border border-slate-200">
       </div>
       <div class="bg-[#BFD9DC]/30 p-3 rounded-lg border border-[#BFD9DC] text-xs space-y-1">
-        <span class="font-bold text-[#7E212A] block">💡 ข้อเสนอแนะเบื้องต้น (OHS Control):</span>
+        <span class="font-bold text-[#7E212A] block">ข้อเสนอแนะเบื้องต้น (OHS Control):</span>
         <p id="modalOhsRecommendation" class="text-slate-700">-</p>
       </div>
+
       <form id="actionForm" class="space-y-3 pt-2 border-t">
         <div>
           <label class="block text-xs font-bold text-slate-700 mb-1">ปรับเปลี่ยนสถานะเคส *</label>
@@ -256,10 +260,44 @@
           <label class="block text-xs font-bold text-slate-700 mb-1">บันทึกมาตรการที่ดำเนินการ (Action Taken)</label>
           <textarea id="updateActionTaken" rows="3" placeholder="ระบุการแก้ไข..." class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-[#7E212A] focus:outline-none"></textarea>
         </div>
-        <button type="submit" class="w-full bg-[#7E212A] hover:bg-[#631921] text-white font-bold py-2.5 rounded-lg text-xs shadow transition-colors">
-          บันทึกการอัปเดต
-        </button>
+        
+        <div class="flex gap-2 pt-2">
+          <button type="button" id="btnDeleteReport" class="w-1/3 bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-lg text-xs shadow transition-colors">
+            ทิ้งลงถังขยะ
+          </button>
+          <button type="submit" class="w-2/3 bg-[#7E212A] hover:bg-[#631921] text-white font-bold py-2.5 rounded-lg text-xs shadow transition-colors">
+            บันทึกการอัปเดต
+          </button>
+        </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Modal ถังขยะ (Recycle Bin) -->
+  <div id="trashModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-xl max-w-3xl w-full max-h-[85vh] flex flex-col p-5 space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <div>
+          <h3 class="font-bold text-base text-slate-800">ถังขยะรายการความเสี่ยง (Recycle Bin)</h3>
+          <p class="text-xs text-slate-500">สามารถคืนค่ารายการกลับมา หรือลบอย่างถาวรได้ที่นี่</p>
+        </div>
+        <button id="btnCloseTrashModal" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+      </div>
+
+      <div class="overflow-y-auto flex-1">
+        <table class="w-full text-left text-xs">
+          <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 sticky top-0">
+            <tr>
+              <th class="p-2.5">Ticket ID</th>
+              <th class="p-2.5">ผู้แจ้งเหตุ</th>
+              <th class="p-2.5">พื้นที่</th>
+              <th class="p-2.5">ประเภทอันตราย</th>
+              <th class="p-2.5 text-center">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="trashTableBody" class="divide-y divide-slate-100 font-medium text-slate-700"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 

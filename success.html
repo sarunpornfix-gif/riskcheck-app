@@ -12,7 +12,7 @@
   <header class="bg-[#7E212A] text-white p-4 shadow-md sticky top-0 z-10">
     <div class="max-w-md mx-auto flex justify-between items-center">
       <h1 class="text-xl font-bold flex items-center gap-2">
-        <span></span> RiskCheck
+        RiskCheck
       </h1>
       <span class="text-xs bg-emerald-600 px-2.5 py-1 rounded-full font-medium">ส่งรายงานเรียบร้อย</span>
     </div>
@@ -22,11 +22,11 @@
 
     <!-- การ์ดแจ้งเตือนสำเร็จ -->
     <div class="bg-white rounded-xl shadow-md p-5 text-center border border-slate-100">
-      <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 text-3xl">
+      <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 text-3xl font-bold">
         ✓
       </div>
       <h2 class="text-lg font-bold text-slate-800">ขอบคุณสำหรับการรายงาน!</h2>
-      <p class="text-xs text-slate-500 mt-1">ข้อมูลของคุณถูกส่งไปยัง จป. / ผู้บริหารเรียบร้อยแล้ว</p>
+      <p class="text-xs text-slate-500 mt-1">ข้อมูลของคุณถูกส่งไปยัง จป. เรียบร้อยแล้ว</p>
       
       <!-- รหัสเคสสำหรับติดตาม -->
       <div class="mt-4 bg-slate-50 p-3 rounded-lg border border-slate-200">
@@ -60,8 +60,8 @@
 
     <!-- มาตรการแนะนำตามหลัก OHS (Hierarchy of Controls) -->
     <div class="bg-white rounded-xl shadow-md p-5 border border-slate-100 space-y-2">
-      <h3 class="text-sm font-bold text-[#7E212A] flex items-center gap-1.5">
-        <span></span> มาตรการตอบสนองแนะนำ (OHS Controls)
+      <h3 class="text-sm font-bold text-[#7E212A]">
+        มาตรการตอบสนองแนะนำ (OHS Controls)
       </h3>
       <div class="bg-[#BFD9DC]/30 p-3 rounded-lg border border-[#BFD9DC] text-xs text-slate-700 space-y-1">
         <p><strong class="text-[#7E212A]">ระดับการควบคุม:</strong> <span id="controlTier">-</span></p>
@@ -71,7 +71,7 @@
 
     <!-- สรุปรายละเอียดที่รายงานไป -->
     <div class="bg-white rounded-xl shadow-md p-5 border border-slate-100 space-y-2 text-xs text-slate-600">
-      <h3 class="text-sm font-bold text-slate-800 border-b pb-2">📋 สรุปข้อมูลรายงาน</h3>
+      <h3 class="text-sm font-bold text-slate-800 border-b pb-2">สรุปข้อมูลรายงาน</h3>
       <p><strong>ผู้รายงาน:</strong> <span id="summaryReporter">-</span></p>
       <p><strong>พื้นที่เกิดเหตุ:</strong> <span id="summaryArea">-</span></p>
       <p><strong>วันเวลา:</strong> <span id="summaryDatetime">-</span></p>
@@ -123,15 +123,41 @@
         document.getElementById('controlAction').innerText = report.controlSuggestion.action;
       }
 
-      // แสดงสรุปรายละเอียด
+      // ชุดแปลชื่อพื้นที่เป็นภาษาไทย
+      const areaNamesTH = {
+        'Line A': 'ฝั่งการผลิต (Line A)',
+        'Line B': 'ฝั่งการผลิต (Line B)',
+        'Warehouse': 'คลังสินค้า (Warehouse)',
+        'Maintenance': 'แผนกซ่อมบำรุง (Maintenance)',
+        'Office': 'สำนักงาน (Office)'
+      };
+
+      // ชุดแปลประเภทอันตรายเป็นภาษาไทย
+      const hazardNamesTH = {
+        'Slip/Trip/Fall': 'ลื่น/สะดุด/ล้ม',
+        'Working at Height': 'ทำงานบนที่สูง',
+        'Chemical': 'สารเคมีรั่วไหล/สัมผัส',
+        'Machinery': 'เครื่องจักรหนีบ/ตัด',
+        'Electrical': 'กระแสไฟฟ้า/สายไฟชำรุด',
+        'Other': 'อื่น ๆ'
+      };
+
+      // ชุดแปลเพศเป็นภาษาไทย
+      const genderTH = {
+        'Male': 'ชาย',
+        'Female': 'หญิง'
+      };
+
+      // แสดงสรุปรายละเอียดภาษาไทย
+      const reporterGenderStr = genderTH[report.reporter.gender] || report.reporter.gender;
       const reporterName = report.isAnonymous 
         ? 'ไม่ระบุตัวตน (Anonymous)' 
-        : `${report.reporter.firstName} ${report.reporter.lastName} (${report.reporter.gender}, ${report.reporter.age} ปี)`;
+        : `${report.reporter.firstName} ${report.reporter.lastName} (${reporterGenderStr}, ${report.reporter.age} ปี)`;
       
       document.getElementById('summaryReporter').innerText = reporterName;
-      document.getElementById('summaryArea').innerText = report.area;
+      document.getElementById('summaryArea').innerText = areaNamesTH[report.area] || report.area;
       document.getElementById('summaryDatetime').innerText = report.incidentDatetime;
-      document.getElementById('summaryHazard').innerText = report.hazardType;
+      document.getElementById('summaryHazard').innerText = hazardNamesTH[report.hazardType] || report.hazardType;
       document.getElementById('summaryDesc').innerText = report.description;
 
       // อัปเดต Timeline สถานะกล่อง (1. รับเรื่องแล้ว / 2. กำลังแก้ไข / 3. ปิดเคสแล้ว)

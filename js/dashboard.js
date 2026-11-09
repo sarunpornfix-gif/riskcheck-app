@@ -3,19 +3,17 @@
 // ==========================================
 
 document.addEventListener('DOMContentLoaded', () => {
-  // --- 🔒 ระบบ Admin Login (Frontend) ---
-  const ADMIN_PASSWORD = "admin123"; // กำหนดรหัสผ่านที่ต้องการตรงนี้
+  // --- ระบบ Admin Login (Frontend) ---
+  const ADMIN_PASSWORD = "admin123";
   const loginOverlay = document.getElementById('adminLoginOverlay');
   const dashboardContent = document.getElementById('dashboardContent');
   const adminLoginForm = document.getElementById('adminLoginForm');
   const loginError = document.getElementById('loginError');
 
-  // เช็คว่าเคย Login ไว้แล้วหรือยังใน Session นี้
   if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
     if(loginOverlay) loginOverlay.classList.add('hidden');
     if(dashboardContent) dashboardContent.classList.remove('hidden');
   } else {
-    // ซ่อน Dashboard ไปก่อนถ้ายังไม่ Login
     if(dashboardContent) dashboardContent.classList.add('hidden');
   }
 
@@ -28,16 +26,16 @@ document.addEventListener('DOMContentLoaded', () => {
         sessionStorage.setItem('isAdminLoggedIn', 'true');
         loginOverlay.classList.add('hidden');
         dashboardContent.classList.remove('hidden');
-        renderDashboard(); // Render ข้อมูลใหม่หลัง Login สำเร็จ
+        renderDashboard();
       } else {
         loginError.classList.remove('hidden');
         document.getElementById('adminPassword').value = '';
       }
     });
   }
-  // ------------------------------------
 
   let reports = JSON.parse(localStorage.getItem('riskCheckReports')) || [];
+  let trashReports = JSON.parse(localStorage.getItem('riskCheckTrash')) || [];
   let currentActiveId = null;
 
   let trendChartInstance = null;
@@ -60,6 +58,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const detailModal = document.getElementById('detailModal');
   const btnCloseModal = document.getElementById('btnCloseModal');
   const actionForm = document.getElementById('actionForm');
+  const btnDeleteReport = document.getElementById('btnDeleteReport');
+
+  const trashModal = document.getElementById('trashModal');
+  const btnOpenTrash = document.getElementById('btnOpenTrash');
+  const btnCloseTrashModal = document.getElementById('btnCloseTrashModal');
+  const trashBadge = document.getElementById('trashBadge');
+  const trashTableBody = document.getElementById('trashTableBody');
 
   const now = new Date();
   const defaultMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -69,12 +74,10 @@ document.addEventListener('DOMContentLoaded', () => {
     chartMonthPicker.addEventListener('change', renderDashboard);
   }
 
-  // 1. Initial Render (ถ้ายืนยันตัวตนแล้ว)
   if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
     renderDashboard();
   }
 
-  // 2. Filter Event Listeners
   if (filterArea) filterArea.addEventListener('change', renderDashboard);
   if (filterRisk) filterRisk.addEventListener('change', renderDashboard);
   if (filterStatus) filterStatus.addEventListener('change', renderDashboard);
@@ -95,7 +98,19 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 3. Form Submit Inside Modal (Update Ticket Status)
+  if (btnOpenTrash) {
+    btnOpenTrash.addEventListener('click', () => {
+      renderTrashTable();
+      trashModal.classList.remove('hidden');
+    });
+  }
+
+  if (btnCloseTrashModal) {
+    btnCloseTrashModal.addEventListener('click', () => {
+      trashModal.classList.add('hidden');
+    });
+  }
+
   if (actionForm) {
     actionForm.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -117,11 +132,34 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ==========================================
-  // Main Render Function
-  // ==========================================
+  if (btnDeleteReport) {
+    btnDeleteReport.addEventListener('click', () => {
+      if (!currentActiveId) return;
+
+      const isConfirmed = confirm(`ย้ายรายงานรหัส ${currentActiveId} ไปยังถังขยะใช่หรือไม่?`);
+      if (isConfirmed) {
+        const targetIndex = reports.findIndex(r => r.id === currentActiveId);
+        if (targetIndex !== -1) {
+          const [deletedItem] = reports.splice(targetIndex, 1);
+          trashReports.push(deletedItem);
+
+          localStorage.setItem('riskCheckReports', JSON.stringify(reports));
+          localStorage.setItem('riskCheckTrash', JSON.stringify(trashReports));
+
+          detailModal.classList.add('hidden');
+          renderDashboard();
+        }
+      }
+    });
+  }
+
   function renderDashboard() {
     reports = JSON.parse(localStorage.getItem('riskCheckReports')) || [];
+    trashReports = JSON.parse(localStorage.getItem('riskCheckTrash')) || [];
+
+    if (trashBadge) {
+      trashBadge.innerText = trashReports.length;
+    }
 
     const selectedArea = filterArea ? filterArea.value : '';
     const selectedRisk = filterRisk ? filterRisk.value : '';
@@ -145,15 +183,92 @@ document.addEventListener('DOMContentLoaded', () => {
     renderTable(filteredReports);
   }
 
-  // ==========================================
-  // Update KPI Cards
-  // ==========================================
+  function renderTrashTable() {
+    trashReports = JSON.parse(localStorage.getItem('riskCheckTrash')) || [];
+    if (!trashTableBody) return;
+
+    trashTableBody.innerHTML = '';
+
+    if (trashReports.length === 0) {
+      trashTableBody.innerHTML = `
+        <tr>
+          <td colspan="5" class="p-6 text-center text-slate-400">
+            ไม่มีรายการในถังขยะ
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    trashReports.forEach(r => {
+      const tr = document.createElement('tr');
+      tr.className = 'hover:bg-slate-50';
+
+      const reporterStr = `${r.reporter.firstName} ${r.reporter.lastName}`;
+
+      tr.innerHTML = `
+        <td class="p-2.5 font-mono font-bold text-[#7E212A]">${r.id}</td>
+        <td class="p-2.5 font-medium">${reporterStr}</td>
+        <td class="p-2.5">${r.area}</td>
+        <td class="p-2.5">${r.hazardType}</td>
+        <td class="p-2.5 text-center flex justify-center gap-1.5">
+          <button data-id="${r.id}" class="btn-restore bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded text-[11px] font-bold transition-colors">
+            คืนค่า
+          </button>
+          <button data-id="${r.id}" class="btn-perm-delete bg-red-600 hover:bg-red-700 text-white px-2 py-1 rounded text-[11px] font-bold transition-colors">
+            ลบถาวร
+          </button>
+        </td>
+      `;
+
+      trashTableBody.appendChild(tr);
+    });
+
+    document.querySelectorAll('.btn-restore').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.getAttribute('data-id');
+        restoreReport(id);
+      });
+    });
+
+    document.querySelectorAll('.btn-perm-delete').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.getAttribute('data-id');
+        permanentlyDeleteReport(id);
+      });
+    });
+  }
+
+  function restoreReport(id) {
+    const index = trashReports.findIndex(r => r.id === id);
+    if (index !== -1) {
+      const [restoredItem] = trashReports.splice(index, 1);
+      reports.push(restoredItem);
+
+      localStorage.setItem('riskCheckReports', JSON.stringify(reports));
+      localStorage.setItem('riskCheckTrash', JSON.stringify(trashReports));
+
+      renderTrashTable();
+      renderDashboard();
+    }
+  }
+
+  function permanentlyDeleteReport(id) {
+    const isConfirmed = confirm(`คุณต้องการลบรายการ ${id} อย่างถาวรใช่หรือไม่? (จะไม่สามารถกู้คืนได้อีกต่อไป)`);
+    if (isConfirmed) {
+      trashReports = trashReports.filter(r => r.id !== id);
+      localStorage.setItem('riskCheckTrash', JSON.stringify(trashReports));
+
+      renderTrashTable();
+      renderDashboard();
+    }
+  }
+
   function updateKPIs(data) {
     if (!kpiTotal) return;
     
     kpiTotal.innerText = data.length;
     
-    // KPI 2: นับคะแนน >= 10 และสถานะยังไม่ปิด
     const highRiskUnclosedCount = data.filter(r => r.riskScore >= 10 && r.status !== 'Closed').length;
     kpiHighRisk.innerText = highRiskUnclosedCount;
 
@@ -164,14 +279,10 @@ document.addEventListener('DOMContentLoaded', () => {
     kpiClosed.innerText = closedCount;
   }
 
-  // ==========================================
-  // 🎯 วาด Risk Matrix 5x5 (นับเฉพาะเคสที่ยังค้างอยู่)
-  // ==========================================
   function renderRiskMatrix5x5(allReports) {
     const gridContainer = document.getElementById('matrixGridContainer');
     if (!gridContainer) return;
 
-    // กรองเฉพาะเคสที่ 'ยังไม่ปิด' (Pending หรือ In Progress)
     const activeReports = allReports.filter(r => r.status !== 'Closed');
 
     const matrixCounts = {};
@@ -215,7 +326,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const cell = document.createElement('div');
         cell.className = `p-3.5 sm:p-4 rounded-xl font-extrabold text-sm sm:text-base shadow-sm flex items-center justify-center transition-transform hover:scale-105 min-h-[48px] ${colorClass}`;
-        // แสดงจำนวนนับหากมีเคสค้างอยู่
         cell.innerHTML = count > 0 ? `<span class="text-base sm:text-lg">${count}</span>` : `<span class="opacity-25 text-xs font-normal">${score}</span>`;
         rowDiv.appendChild(cell);
       }
@@ -224,9 +334,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // ==========================================
-  // 📊 สรุปสถิติเหตุการณ์รายพื้นที่ (Real Data)
-  // ==========================================
   function renderAreaSummary(allReports) {
     const tableBody = document.getElementById('areaSummaryTableBody');
     if (!tableBody) return;
@@ -242,7 +349,6 @@ document.addEventListener('DOMContentLoaded', () => {
     tableBody.innerHTML = '';
 
     areaList.forEach(item => {
-      // ดึงข้อมูลเคสเฉพาะพื้นที่นั้นๆ จากข้อมูลจริง
       const areaReports = allReports.filter(r => r.area === item.key);
       
       const total = areaReports.length;
@@ -256,7 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
       tr.innerHTML = `
         <td class="p-2.5 font-bold">${item.name}</td>
         <td class="p-2.5 text-center font-extrabold text-slate-800">${total > 0 ? total : '-'}</td>
-        <td class="p-2.5 text-center font-bold ${highRisk > 0 ? 'text-red-600' : 'text-slate-300'}">${highRisk > 0 ? highRisk : '-'}</td>
+        <td class="p-2.5 text-center font-bold ${highRisk > 0 ? 'text-[#7E212A]' : 'text-slate-300'}">${highRisk > 0 ? highRisk : '-'}</td>
         <td class="p-2.5 text-center font-bold ${pending > 0 ? 'text-amber-600' : 'text-slate-300'}">${pending > 0 ? pending : '-'}</td>
         <td class="p-2.5 text-center font-bold ${closed > 0 ? 'text-emerald-600' : 'text-slate-300'}">${closed > 0 ? closed : '-'}</td>
       `;
@@ -265,9 +371,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ==========================================
-  // 📈 Render Monthly Charts
-  // ==========================================
   function renderCharts(allReports) {
     let targetYear = now.getFullYear();
     let targetMonth = now.getMonth();
@@ -365,9 +468,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // ==========================================
-  // 📋 Render Table Data
-  // ==========================================
   function renderTable(data) {
     if (!tableBody) return;
     tableBody.innerHTML = '';
@@ -426,7 +526,6 @@ document.addEventListener('DOMContentLoaded', () => {
       tableBody.appendChild(tr);
     });
 
-    // แนบ Event Listener ให้กับปุ่ม "จัดการ" ทุกปุ่มในตาราง
     document.querySelectorAll('.btn-open-detail').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const ticketId = e.currentTarget.getAttribute('data-id');
@@ -435,18 +534,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ==========================================
-  // 📝 Open Detail & Edit Modal
-  // ==========================================
   function openModal(ticketId) {
     const r = reports.find(item => item.id === ticketId);
     if (!r) return;
 
     currentActiveId = ticketId;
 
+    const genderTH = { 'Male': 'ชาย', 'Female': 'หญิง' };
+    const genderStr = genderTH[r.reporter.gender] || r.reporter.gender;
+
     document.getElementById('modalTicketId').innerText = r.id;
     document.getElementById('modalReporter').innerText = `${r.reporter.firstName} ${r.reporter.lastName}`;
-    document.getElementById('modalPhysical').innerText = `เพศ ${r.reporter.gender} | อายุ ${r.reporter.age} ปี | น้ำหนัก ${r.reporter.weight} kg | ส่วนสูง ${r.reporter.height} cm`;
+    
+    // แสดงเฉพาะ เพศ และ อายุ (ไม่แสดงน้ำหนัก/ส่วนสูง)
+    document.getElementById('modalPhysical').innerText = `เพศ ${genderStr} | อายุ ${r.reporter.age} ปี`;
+    
     document.getElementById('modalAreaDatetime').innerText = `${r.area} (${r.incidentDatetime})`;
     document.getElementById('modalHazard').innerText = r.hazardType;
     document.getElementById('modalDescription').innerText = r.description;
