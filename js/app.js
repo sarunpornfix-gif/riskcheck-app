@@ -9,13 +9,15 @@ document.addEventListener('DOMContentLoaded', () => {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    // 1. ดึงข้อมูลผู้แจ้งเหตุ (ไม่รวมน้ำหนัก/ส่วนสูงแล้ว)
+    // ดึงบทบาท (ผู้แจ้งเหตุ หรือ ผู้เกือบได้รับอันตราย)
+    const roleElem = document.querySelector('input[name="reporterRole"]:checked');
+    const reporterRole = roleElem ? roleElem.value : 'ผู้แจ้งเหตุ';
+
     const firstName = document.getElementById('reporterFirstName').value.trim();
     const lastName = document.getElementById('reporterLastName').value.trim();
-    const age = document.getElementById('reporterAge').value;
+    const age = parseInt(document.getElementById('reporterAge').value);
     const gender = document.getElementById('reporterGender').value;
 
-    // 2. ดึงข้อมูลเหตุการณ์
     const area = document.getElementById('area').value;
     const date = document.getElementById('incidentDate').value;
     const hour = document.getElementById('incidentHour').value;
@@ -40,7 +42,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const likelihood = parseInt(likelihoodElem.value);
     const riskScore = severity * likelihood;
 
-    // 3. ประเมินระดับความเสี่ยง Risk Level
     let riskLevel = 'ต่ำ (Low)';
     let riskColor = 'bg-emerald-600 text-white';
 
@@ -55,7 +56,6 @@ document.addEventListener('DOMContentLoaded', () => {
       riskColor = 'bg-amber-400 text-amber-950';
     }
 
-    // 4. สร้างข้อแนะนำ OHS Controls
     let controlSuggestion = {
       tier: 'Engineering / Admin Controls',
       action: 'ทำความสะอาดจุดเสี่ยง ติดตั้งแผ่นกันลื่น และเพิ่มป้ายเตือนระวัง'
@@ -75,51 +75,61 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const description = document.getElementById('description').value.trim();
     const imageInput = document.getElementById('imageInput');
-    let imageDataUrl = null;
+    let imageUrl = null;
 
     if (imageInput && imageInput.files && imageInput.files[0]) {
-      imageDataUrl = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (event) => resolve(event.target.result);
-        reader.readAsDataURL(imageInput.files[0]);
-      });
+      const file = imageInput.files[0];
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${fileExt}`;
+
+      const { data: uploadData, error: uploadError } = await supabaseClient.storage
+        .from('incident-photos')
+        .upload(fileName, file);
+
+      if (!uploadError) {
+        const { data: publicUrlData } = supabaseClient.storage
+          .from('incident-photos')
+          .getPublicUrl(fileName);
+        imageUrl = publicUrlData.publicUrl;
+      }
     }
 
-    // 5. สร้าง Ticket ID (เช่น RC-20261109-1234)
     const randomNum = Math.floor(1000 + Math.random() * 9000);
     const todayStr = date.replace(/-/g, '');
     const ticketId = `RC-${todayStr}-${randomNum}`;
 
-    const newReport = {
-      id: ticketId,
-      reporter: {
-        firstName,
-        lastName,
-        age,
-        gender
-      },
-      area,
-      incidentDatetime,
-      hazardType,
-      severity,
-      likelihood,
-      riskScore,
-      riskLevel,
-      riskColor,
-      controlSuggestion,
-      description,
-      image: imageDataUrl,
-      status: 'Pending',
-      actionTaken: '',
-      createdAt: new Date().toISOString()
-    };
+    const { error } = await supabaseClient
+      .from('riskcheck_reports')
+      .insert([
+        {
+          id: ticketId,
+          reporter_role: reporterRole,
+          reporter_first_name: firstName,
+          reporter_last_name: lastName,
+          reporter_age: age,
+          reporter_gender: gender,
+          area: area,
+          incident_datetime: incidentDatetime,
+          hazard_type: hazardType,
+          severity: severity,
+          likelihood: likelihood,
+          risk_score: riskScore,
+          risk_level: riskLevel,
+          risk_color: riskColor,
+          control_tier: controlSuggestion.tier,
+          control_action: controlSuggestion.action,
+          description: description,
+          image_url: imageUrl,
+          status: 'Pending',
+          is_deleted: false
+        }
+      ]);
 
-    // 6. บันทึกลง LocalStorage
-    const reports = JSON.parse(localStorage.getItem('riskCheckReports')) || [];
-    reports.unshift(newReport);
-    localStorage.setItem('riskCheckReports', JSON.stringify(reports));
+    if (error) {
+      alert('เกิดข้อผิดพลาดในการบันทึกข้อมูลไปยัง Supabase: ' + error.message);
+      return;
+    }
 
-    // 7. เปิดไปหน้า Success
     window.location.href = `success.html?ticketId=${ticketId}`;
   });
 });

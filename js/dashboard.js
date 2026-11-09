@@ -3,7 +3,6 @@
 // ==========================================
 
 document.addEventListener('DOMContentLoaded', () => {
-  // --- ระบบ Admin Login (Frontend) ---
   const ADMIN_PASSWORD = "admin123";
   const loginOverlay = document.getElementById('adminLoginOverlay');
   const dashboardContent = document.getElementById('dashboardContent');
@@ -13,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
     if(loginOverlay) loginOverlay.classList.add('hidden');
     if(dashboardContent) dashboardContent.classList.remove('hidden');
+    renderDashboard();
   } else {
     if(dashboardContent) dashboardContent.classList.add('hidden');
   }
@@ -34,8 +34,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  let reports = JSON.parse(localStorage.getItem('riskCheckReports')) || [];
-  let trashReports = JSON.parse(localStorage.getItem('riskCheckTrash')) || [];
+  let reports = [];
+  let trashReports = [];
   let currentActiveId = null;
 
   let trendChartInstance = null;
@@ -74,10 +74,6 @@ document.addEventListener('DOMContentLoaded', () => {
     chartMonthPicker.addEventListener('change', renderDashboard);
   }
 
-  if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
-    renderDashboard();
-  }
-
   if (filterArea) filterArea.addEventListener('change', renderDashboard);
   if (filterRisk) filterRisk.addEventListener('change', renderDashboard);
   if (filterStatus) filterStatus.addEventListener('change', renderDashboard);
@@ -112,19 +108,43 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (actionForm) {
-    actionForm.addEventListener('submit', (e) => {
+    actionForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!currentActiveId) return;
 
       const newStatus = document.getElementById('updateStatus').value;
       const newActionTaken = document.getElementById('updateActionTaken').value.trim();
 
-      const targetReport = reports.find(r => r.id === currentActiveId);
-      if (targetReport) {
-        targetReport.status = newStatus;
-        targetReport.actionTaken = newActionTaken;
+      const { error } = await supabaseClient
+        .from('riskcheck_reports')
+        .update({ status: newStatus, action_taken: newActionTaken })
+        .eq('id', currentActiveId);
 
-        localStorage.setItem('riskCheckReports', JSON.stringify(reports));
+      if (error) {
+        alert('เกิดข้อผิดพลาดในการบันทึก: ' + error.message);
+        return;
+      }
+
+      detailModal.classList.add('hidden');
+      renderDashboard();
+    });
+  }
+
+  if (btnDeleteReport) {
+    btnDeleteReport.addEventListener('click', async () => {
+      if (!currentActiveId) return;
+
+      const isConfirmed = confirm(`ย้ายรายงานรหัส ${currentActiveId} ไปยังถังขยะใช่หรือไม่?`);
+      if (isConfirmed) {
+        const { error } = await supabaseClient
+          .from('riskcheck_reports')
+          .update({ is_deleted: true })
+          .eq('id', currentActiveId);
+
+        if (error) {
+          alert('เกิดข้อผิดพลาดในการย้ายลงถังขยะ: ' + error.message);
+          return;
+        }
 
         detailModal.classList.add('hidden');
         renderDashboard();
@@ -132,30 +152,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  if (btnDeleteReport) {
-    btnDeleteReport.addEventListener('click', () => {
-      if (!currentActiveId) return;
+  async function renderDashboard() {
+    const { data: activeData } = await supabaseClient
+      .from('riskcheck_reports')
+      .select('*')
+      .eq('is_deleted', false)
+      .order('created_at', { ascending: false });
 
-      const isConfirmed = confirm(`ย้ายรายงานรหัส ${currentActiveId} ไปยังถังขยะใช่หรือไม่?`);
-      if (isConfirmed) {
-        const targetIndex = reports.findIndex(r => r.id === currentActiveId);
-        if (targetIndex !== -1) {
-          const [deletedItem] = reports.splice(targetIndex, 1);
-          trashReports.push(deletedItem);
+    reports = activeData || [];
 
-          localStorage.setItem('riskCheckReports', JSON.stringify(reports));
-          localStorage.setItem('riskCheckTrash', JSON.stringify(trashReports));
+    const { data: trashData } = await supabaseClient
+      .from('riskcheck_reports')
+      .select('id')
+      .eq('is_deleted', true);
 
-          detailModal.classList.add('hidden');
-          renderDashboard();
-        }
-      }
-    });
-  }
-
-  function renderDashboard() {
-    reports = JSON.parse(localStorage.getItem('riskCheckReports')) || [];
-    trashReports = JSON.parse(localStorage.getItem('riskCheckTrash')) || [];
+    trashReports = trashData || [];
 
     if (trashBadge) {
       trashBadge.innerText = trashReports.length;
@@ -167,7 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const filteredReports = reports.filter(r => {
       const matchArea = !selectedArea || r.area === selectedArea;
-      const matchRisk = !selectedRisk || r.riskLevel === selectedRisk;
+      const matchRisk = !selectedRisk || r.risk_level === selectedRisk;
       const matchStatus = !selectedStatus || r.status === selectedStatus;
       return matchArea && matchRisk && matchStatus;
     });
@@ -183,8 +194,14 @@ document.addEventListener('DOMContentLoaded', () => {
     renderTable(filteredReports);
   }
 
-  function renderTrashTable() {
-    trashReports = JSON.parse(localStorage.getItem('riskCheckTrash')) || [];
+  async function renderTrashTable() {
+    const { data: trashData } = await supabaseClient
+      .from('riskcheck_reports')
+      .select('*')
+      .eq('is_deleted', true)
+      .order('created_at', { ascending: false });
+
+    trashReports = trashData || [];
     if (!trashTableBody) return;
 
     trashTableBody.innerHTML = '';
@@ -204,13 +221,13 @@ document.addEventListener('DOMContentLoaded', () => {
       const tr = document.createElement('tr');
       tr.className = 'hover:bg-slate-50';
 
-      const reporterStr = `${r.reporter.firstName} ${r.reporter.lastName}`;
+      const reporterStr = `${r.reporter_first_name} ${r.reporter_last_name}`;
 
       tr.innerHTML = `
         <td class="p-2.5 font-mono font-bold text-[#7E212A]">${r.id}</td>
         <td class="p-2.5 font-medium">${reporterStr}</td>
         <td class="p-2.5">${r.area}</td>
-        <td class="p-2.5">${r.hazardType}</td>
+        <td class="p-2.5">${r.hazard_type}</td>
         <td class="p-2.5 text-center flex justify-center gap-1.5">
           <button data-id="${r.id}" class="btn-restore bg-emerald-600 hover:bg-emerald-700 text-white px-2 py-1 rounded text-[11px] font-bold transition-colors">
             คืนค่า
@@ -239,28 +256,30 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  function restoreReport(id) {
-    const index = trashReports.findIndex(r => r.id === id);
-    if (index !== -1) {
-      const [restoredItem] = trashReports.splice(index, 1);
-      reports.push(restoredItem);
+  async function restoreReport(id) {
+    const { error } = await supabaseClient
+      .from('riskcheck_reports')
+      .update({ is_deleted: false })
+      .eq('id', id);
 
-      localStorage.setItem('riskCheckReports', JSON.stringify(reports));
-      localStorage.setItem('riskCheckTrash', JSON.stringify(trashReports));
-
+    if (!error) {
       renderTrashTable();
       renderDashboard();
     }
   }
 
-  function permanentlyDeleteReport(id) {
+  async function permanentlyDeleteReport(id) {
     const isConfirmed = confirm(`คุณต้องการลบรายการ ${id} อย่างถาวรใช่หรือไม่? (จะไม่สามารถกู้คืนได้อีกต่อไป)`);
     if (isConfirmed) {
-      trashReports = trashReports.filter(r => r.id !== id);
-      localStorage.setItem('riskCheckTrash', JSON.stringify(trashReports));
+      const { error } = await supabaseClient
+        .from('riskcheck_reports')
+        .delete()
+        .eq('id', id);
 
-      renderTrashTable();
-      renderDashboard();
+      if (!error) {
+        renderTrashTable();
+        renderDashboard();
+      }
     }
   }
 
@@ -269,7 +288,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     kpiTotal.innerText = data.length;
     
-    const highRiskUnclosedCount = data.filter(r => r.riskScore >= 10 && r.status !== 'Closed').length;
+    const highRiskUnclosedCount = data.filter(r => r.risk_score >= 10 && r.status !== 'Closed').length;
     kpiHighRisk.innerText = highRiskUnclosedCount;
 
     const pendingCount = data.filter(r => r.status === 'Pending').length;
@@ -352,7 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const areaReports = allReports.filter(r => r.area === item.key);
       
       const total = areaReports.length;
-      const highRisk = areaReports.filter(r => r.riskScore >= 10).length;
+      const highRisk = areaReports.filter(r => r.risk_score >= 10).length;
       const pending = areaReports.filter(r => r.status === 'Pending').length;
       const closed = areaReports.filter(r => r.status === 'Closed').length;
 
@@ -382,7 +401,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const selectedMonthReports = allReports.filter(r => {
-      const dateObj = new Date(r.incidentDatetime.replace(' ', 'T'));
+      const dateObj = new Date(r.incident_datetime.replace(' ', 'T'));
       if (isNaN(dateObj)) return false;
       return dateObj.getFullYear() === targetYear && dateObj.getMonth() === targetMonth;
     });
@@ -392,7 +411,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const dayLabels = Array.from({ length: daysInMonth }, (_, i) => `${i + 1}`);
 
     selectedMonthReports.forEach(r => {
-      const dateObj = new Date(r.incidentDatetime.replace(' ', 'T'));
+      const dateObj = new Date(r.incident_datetime.replace(' ', 'T'));
       const day = dateObj.getDate();
       if (day >= 1 && day <= daysInMonth) {
         dailyCounts[day - 1] += 1;
@@ -498,17 +517,17 @@ document.addEventListener('DOMContentLoaded', () => {
         statusLabel = '3. ปิดเคส';
       }
 
-      const reporterStr = `${r.reporter.firstName} ${r.reporter.lastName}`;
+      const reporterStr = `${r.reporter_first_name} ${r.reporter_last_name}`;
 
       tr.innerHTML = `
         <td class="p-3 font-mono font-bold text-[#7E212A]">${r.id}</td>
-        <td class="p-3 whitespace-nowrap">${r.incidentDatetime}</td>
+        <td class="p-3 whitespace-nowrap">${r.incident_datetime}</td>
         <td class="p-3 font-medium">${reporterStr}</td>
         <td class="p-3">${r.area}</td>
-        <td class="p-3">${r.hazardType}</td>
+        <td class="p-3">${r.hazard_type}</td>
         <td class="p-3 text-center">
-          <span class="px-2 py-0.5 rounded-full font-bold text-[10px] ${r.riskColor}">
-            ${r.riskScore} (${r.riskLevel.split(' ')[0]})
+          <span class="px-2 py-0.5 rounded-full font-bold text-[10px] ${r.risk_color}">
+            ${r.risk_score} (${r.risk_level.split(' ')[0]})
           </span>
         </td>
         <td class="p-3 text-center">
@@ -541,37 +560,35 @@ document.addEventListener('DOMContentLoaded', () => {
     currentActiveId = ticketId;
 
     const genderTH = { 'Male': 'ชาย', 'Female': 'หญิง' };
-    const genderStr = genderTH[r.reporter.gender] || r.reporter.gender;
+    const genderStr = genderTH[r.reporter_gender] || r.reporter_gender;
 
     document.getElementById('modalTicketId').innerText = r.id;
-    document.getElementById('modalReporter').innerText = `${r.reporter.firstName} ${r.reporter.lastName}`;
-    
-    // แสดงเฉพาะ เพศ และ อายุ (ไม่แสดงน้ำหนัก/ส่วนสูง)
-    document.getElementById('modalPhysical').innerText = `เพศ ${genderStr} | อายุ ${r.reporter.age} ปี`;
-    
-    document.getElementById('modalAreaDatetime').innerText = `${r.area} (${r.incidentDatetime})`;
-    document.getElementById('modalHazard').innerText = r.hazardType;
+    document.getElementById('modalReporter').innerText = `${r.reporter_first_name} ${r.reporter_last_name}`;
+    document.getElementById('modalPhysical').innerText = `เพศ ${genderStr} | อายุ ${r.reporter_age} ปี`;
+    document.getElementById('modalAreaDatetime').innerText = `${r.area} (${r.incident_datetime})`;
+    document.getElementById('modalHazard').innerText = r.hazard_type;
     document.getElementById('modalDescription').innerText = r.description;
 
+    // แสดงรูปถ่ายหากมีข้อมูลรูปในฐานข้อมูล
     const imgContainer = document.getElementById('modalImageContainer');
     const modalImg = document.getElementById('modalImage');
 
-    if (r.image) {
-      modalImg.src = r.image;
+    if (r.image_url) {
+      modalImg.src = r.image_url;
       imgContainer.classList.remove('hidden');
     } else {
       imgContainer.classList.add('hidden');
     }
 
     const ohsElem = document.getElementById('modalOhsRecommendation');
-    if (r.controlSuggestion) {
-      ohsElem.innerText = `[${r.controlSuggestion.tier}] ${r.controlSuggestion.action}`;
+    if (r.control_tier) {
+      ohsElem.innerText = `[${r.control_tier}] ${r.control_action}`;
     } else {
       ohsElem.innerText = '-';
     }
 
     document.getElementById('updateStatus').value = r.status || 'Pending';
-    document.getElementById('updateActionTaken').value = r.actionTaken || '';
+    document.getElementById('updateActionTaken').value = r.action_taken || '';
 
     if (detailModal) detailModal.classList.remove('hidden');
   }
