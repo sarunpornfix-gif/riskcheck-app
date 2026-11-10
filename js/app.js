@@ -175,7 +175,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
 
-      // หากเปิดผ่าน LINE และดึง User ID ได้ ให้ยิงแชทบัตรคิวกลับเข้า LINE ทันที
+      // หากเปิดผ่าน LINE ให้ยิง Flex Message บัตรคิวกลับเข้าแชท
       if (typeof liff !== 'undefined' && liff.isInClient()) {
         try {
           await liff.sendMessages([
@@ -222,13 +222,12 @@ document.addEventListener('DOMContentLoaded', async () => {
               }
             }
           ]);
-          console.log('Flex Message sent successfully!');
         } catch (liffMsgErr) {
-          console.error('ส่ง Flex Message ไม่สำเร็จ:', liffMsgErr);
+          alert('แจ้งเตือนสิทธิ์ LINE: ' + liffMsgErr.message);
         }
       }
 
-      // ย้ายหน้าไปยัง success.html หลังจากส่งข้อความเสร็จแล้ว
+      // ย้ายหน้าไปยัง success.html
       window.location.href = `success.html?ticketId=${ticketId}`;
 
     } catch (err) {
