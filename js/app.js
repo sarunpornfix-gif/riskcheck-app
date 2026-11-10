@@ -141,7 +141,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const todayStr = date.replace(/-/g, '');
       const ticketId = `RC-${todayStr}-${randomNum}`;
 
-      // บันทึกข้อมูลพร้อม line_user_id
+      // บันทึกข้อมูลลง Supabase พร้อม line_user_id
       const { error: insertError } = await supabaseClient
         .from('riskcheck_reports')
         .insert([
@@ -175,8 +175,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
 
-      // ส่ง Flex Message บัตรคิวกลับเข้าแชท LINE ทันที
-      if (userLineId && typeof liff !== 'undefined' && liff.isInClient()) {
+      // หากเปิดผ่าน LINE และดึง User ID ได้ ให้ยิงแชทบัตรคิวกลับเข้า LINE ทันที
+      if (typeof liff !== 'undefined' && liff.isInClient()) {
         try {
           await liff.sendMessages([
             {
@@ -222,11 +222,13 @@ document.addEventListener('DOMContentLoaded', async () => {
               }
             }
           ]);
+          console.log('Flex Message sent successfully!');
         } catch (liffMsgErr) {
-          console.warn('ไม่สามารถส่ง Flex Message ผ่าน liff.sendMessages ได้:', liffMsgErr);
+          console.error('ส่ง Flex Message ไม่สำเร็จ:', liffMsgErr);
         }
       }
 
+      // ย้ายหน้าไปยัง success.html หลังจากส่งข้อความเสร็จแล้ว
       window.location.href = `success.html?ticketId=${ticketId}`;
 
     } catch (err) {
