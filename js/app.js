@@ -1,8 +1,25 @@
 // ==========================================
-// RiskCheck - Core Form Logic (js/app.js)
+// RiskCheck - Core Form Logic with LINE LIFF
 // ==========================================
 
-document.addEventListener('DOMContentLoaded', () => {
+let userLineId = null;
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // 1. เริ่มทำงาน LINE LIFF เพื่อดึง User ID
+  try {
+    await liff.init({ liffId: "2012528048-jMOQR1vJ" });
+    if (liff.isLoggedIn()) {
+      const profile = await liff.getProfile();
+      userLineId = profile.userId;
+      console.log('LINE User ID Connected:', userLineId);
+    } else {
+      // หากเปิดนอก LINE ให้บังคับ Log in
+      liff.login();
+    }
+  } catch (err) {
+    console.warn('LIFF init warning (อาจเปิดทดสอบบน Browser ปกติ):', err.message);
+  }
+
   const form = document.getElementById('nearMissForm');
   if (!form) return;
 
@@ -10,13 +27,11 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
 
     try {
-      // 0. ตรวจสอบว่า Supabase Client พร้อมใช้งานหรือไม่
       if (typeof supabaseClient === 'undefined') {
-        alert('ไม่สามารถเชื่อมต่อ Supabase SDK ได้ กรุณาตรวจสอบการตั้งค่าใน js/supabase-config.js');
+        alert('ไม่สามารถเชื่อมต่อ Supabase SDK ได้');
         return;
       }
 
-      // 1. ดึงบทบาทผู้กรอกข้อมูล
       const roleElem = document.querySelector('input[name="reporterRole"]:checked');
       const reporterRole = roleElem ? roleElem.value : 'ผู้แจ้งเหตุ';
 
@@ -64,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       // ----------------------------------------------------
-      // คำแนะนำ OHS Controls แบบปรับตามประเภทอันตราย (Dynamic Controls)
+      // Dynamic OHS Controls
       // ----------------------------------------------------
       let controlSuggestion = {
         tier: 'Administrative Controls',
@@ -72,84 +87,35 @@ document.addEventListener('DOMContentLoaded', () => {
       };
 
       if (hazardType.includes('Working at Height')) {
-        if (riskScore >= 10) {
-          controlSuggestion = {
-            tier: 'Elimination / Substitution',
-            action: 'สั่งระงับการทำงานบนที่สูงทันที ตรวจสอบราวกันตก/นั่งร้าน และสายช่วยชีวิต (Lifeline) ก่อนอนุญาตให้ทำงานต่อ'
-          };
-        } else {
-          controlSuggestion = {
-            tier: 'PPE & Admin Controls',
-            action: 'ตรวจสอบอุปกรณ์กันตก (Full Body Harness) จุดยึดเกาะ และใบอนุญาตทำงานบนที่สูง (Work Permit)'
-          };
-        }
+        controlSuggestion = riskScore >= 10 ? 
+          { tier: 'Elimination / Substitution', action: 'สั่งระงับการทำงานบนที่สูงทันที ตรวจสอบราวกันตก/นั่งร้าน และสายช่วยชีวิต (Lifeline) ก่อนอนุญาตให้ทำงานต่อ' } :
+          { tier: 'PPE & Admin Controls', action: 'ตรวจสอบอุปกรณ์กันตก (Full Body Harness) จุดยึดเกาะ และใบอนุญาตทำงานบนที่สูง (Work Permit)' };
       } else if (hazardType.includes('Chemical')) {
-        if (riskScore >= 10) {
-          controlSuggestion = {
-            tier: 'Elimination / Substitution',
-            action: 'อพยพพนักงานออกจากพื้นที่เหนือลม ตัดระบบจ่ายสารเคมี ใช้ชุด Spill Kit ควบคุมการรั่วไหลทันที'
-          };
-        } else {
-          controlSuggestion = {
-            tier: 'Administrative Controls',
-            action: 'ซับทำความสะอาดสารเคมีที่รั่วไหล ตรวจสอบเอกสารความปลอดภัย (SDS) และระบายอากาศในพื้นที่'
-          };
-        }
+        controlSuggestion = riskScore >= 10 ? 
+          { tier: 'Elimination / Engineering', action: 'อพยพพนักงานออกจากพื้นที่เหนือลม ตัดระบบจ่ายสารเคมี ใช้ชุด Spill Kit ควบคุมการรั่วไหลทันที' } :
+          { tier: 'Administrative Controls', action: 'ซับทำความสะอาดสารเคมีที่รั่วไหล ตรวจสอบเอกสารความปลอดภัย (SDS) และระบายอากาศในพื้นที่' };
       } else if (hazardType.includes('Electrical')) {
-        if (riskScore >= 10) {
-          controlSuggestion = {
-            tier: 'Engineering Controls',
-            action: 'ตัดกระแสไฟฟ้าที่ตู้ควบคุมหลักทันที ทำการใส่กุญแจและติดป้ายเตือน (Lockout/Tagout - LOTO) ก่อนเข้าซ่อมแซม'
-          };
-        } else {
-          controlSuggestion = {
-            tier: 'Administrative Controls',
-            action: 'ปลดปลั๊ก/งดใช้งานอุปกรณ์ไฟฟ้านั้นทันที ติดป้ายเตือนชำรุด และแจ้งแผนกซ่อมบำรุงเข้าดำเนินการ'
-          };
-        }
+        controlSuggestion = riskScore >= 10 ? 
+          { tier: 'Engineering Controls (LOTO)', action: 'ตัดกระแสไฟฟ้าที่ตู้ควบคุมหลักทันที ทำการใส่กุญแจและติดป้ายเตือน (Lockout/Tagout - LOTO) ก่อนเข้าซ่อมแซม' } :
+          { tier: 'Administrative Controls', action: 'ปลดปลั๊ก/งดใช้งานอุปกรณ์ไฟฟ้านั้นทันที ติดป้ายเตือนชำรุด และแจ้งแผนกซ่อมบำรุงเข้าดำเนินการ' };
       } else if (hazardType.includes('Machinery')) {
-        if (riskScore >= 10) {
-          controlSuggestion = {
-            tier: 'Engineering Controls',
-            action: 'กดปุ่มหยุดฉุกเฉิน (E-Stop) หยุดการทำงานของเครื่องจักร ติดตั้งการ์ดป้องกัน (Safety Guard) หรือเซ็นเซอร์ตัดการทำงาน'
-          };
-        } else {
-          controlSuggestion = {
-            tier: 'PPE & Admin Controls',
-            action: 'ตรวจสอบฝาครอบส่วนหมุน ปรับปรุงขั้นตอนการทำงาน (SOP) และห้ามใส่เครื่องประดับ/เสื้อผ้าหลวมขณะคุมเครื่อง'
-          };
-        }
+        controlSuggestion = riskScore >= 10 ? 
+          { tier: 'Engineering Controls', action: 'กดปุ่มหยุดฉุกเฉิน (E-Stop) หยุดการทำงานของเครื่องจักร ติดตั้งการ์ดป้องกัน (Safety Guard) หรือเซ็นเซอร์ตัดการทำงาน' } :
+          { tier: 'PPE & Admin Controls', action: 'ตรวจสอบฝาครอบส่วนหมุน ปรับปรุงขั้นตอนการทำงาน (SOP) และห้ามใส่เครื่องประดับ/เสื้อผ้าหลวมขณะคุมเครื่อง' };
       } else if (hazardType.includes('Slip/Trip/Fall')) {
-        if (riskScore >= 10) {
-          controlSuggestion = {
-            tier: 'Engineering Controls',
-            action: 'กั้นเขตห้ามผ่านทันที ปรับปรุงพื้นผิวที่ชำรุด/ขจัดคราบน้ำมันเข้มข้น และแก้ไขระบบระบายน้ำ/รอยรั่วซึม'
-          };
-        } else {
-          controlSuggestion = {
-            tier: 'Administrative Controls',
-            action: 'เช็ดทำความสะอาดพื้นผิว ติดตั้งแผ่นกันลื่น และวางป้ายเตือนพื้นลื่นชั่วคราว'
-          };
-        }
+        controlSuggestion = riskScore >= 10 ? 
+          { tier: 'Engineering Controls', action: 'กั้นเขตห้ามผ่านทันที ปรับปรุงพื้นผิวที่ชำรุด/ขจัดคราบน้ำมันเข้มข้น และแก้ไขระบบระบายน้ำ/รอยรั่วซึม' } :
+          { tier: 'Administrative Controls', action: 'เช็ดทำความสะอาดพื้นผิว ติดตั้งแผ่นกันลื่น และวางป้ายเตือนพื้นลื่นชั่วคราว' };
       } else {
-        if (riskScore >= 10) {
-          controlSuggestion = {
-            tier: 'Elimination / Substitution',
-            action: 'หยุดกิจกรรมในจุดเกิดเหตุทันที กั้นเขตอันตราย และแจ้ง จป.วิชาชีพ เข้าประเมินความเสี่ยงเชิงลึก'
-          };
-        } else {
-          controlSuggestion = {
-            tier: 'Administrative Controls',
-            action: 'แจ้งหัวหน้างานในพื้นที่ เคลียร์สิ่งกีดขวาง และบันทึกติดตามผลการแก้ไข'
-          };
-        }
+        controlSuggestion = riskScore >= 10 ? 
+          { tier: 'Elimination / Substitution', action: 'หยุดกิจกรรมในจุดเกิดเหตุทันที กั้นเขตอันตราย และแจ้ง จป.วิชาชีพ เข้าประเมินความเสี่ยงเชิงลึก' } :
+          { tier: 'Administrative Controls', action: 'แจ้งหัวหน้างานในพื้นที่ เคลียร์สิ่งกีดขวาง และบันทึกติดตามผลการแก้ไข' };
       }
 
       const description = document.getElementById('description').value.trim();
       const imageInput = document.getElementById('imageInput');
       let imageUrl = null;
 
-      // 2. อัปโหลดรูปภาพ (หากมี)
       if (imageInput && imageInput.files && imageInput.files[0]) {
         try {
           const file = imageInput.files[0];
@@ -165,25 +131,23 @@ document.addEventListener('DOMContentLoaded', () => {
               .from('incident-photos')
               .getPublicUrl(fileName);
             imageUrl = publicUrlData.publicUrl;
-          } else {
-            console.warn('Storage Upload Error:', uploadError.message);
           }
         } catch (imgErr) {
-          console.warn('Image process skipped due to error:', imgErr);
+          console.warn('Image process skipped:', imgErr);
         }
       }
 
-      // 3. สร้าง Ticket ID
       const randomNum = Math.floor(1000 + Math.random() * 9000);
       const todayStr = date.replace(/-/g, '');
       const ticketId = `RC-${todayStr}-${randomNum}`;
 
-      // 4. บันทึกเข้า Supabase
+      // บันทึกข้อมูลพร้อม line_user_id
       const { error: insertError } = await supabaseClient
         .from('riskcheck_reports')
         .insert([
           {
             id: ticketId,
+            line_user_id: userLineId,
             reporter_role: reporterRole,
             reporter_first_name: firstName,
             reporter_last_name: lastName,
@@ -208,15 +172,65 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (insertError) {
         alert('เกิดข้อผิดพลาดจากฐานข้อมูล Supabase: ' + insertError.message);
-        console.error('Insert Error Detail:', insertError);
         return;
       }
 
-      // 5. บันทึกสำเร็จ -> ไปยังหน้า success.html
+      // ส่ง Flex Message บัตรคิวกลับเข้าแชท LINE ทันที
+      if (userLineId && typeof liff !== 'undefined' && liff.isInClient()) {
+        try {
+          await liff.sendMessages([
+            {
+              type: 'flex',
+              altText: `รับเรื่องรายงานแล้ว รหัสติดตาม: ${ticketId}`,
+              contents: {
+                type: 'bubble',
+                header: {
+                  type: 'box',
+                  layout: 'vertical',
+                  backgroundColor: '#7E212A',
+                  contents: [
+                    { type: 'text', text: 'RiskCheck - บันทึกรายงานแล้ว', color: '#FFFFFF', weight: 'bold', size: 'sm' }
+                  ]
+                },
+                body: {
+                  type: 'box',
+                  layout: 'vertical',
+                  contents: [
+                    { type: 'text', text: 'รหัสติดตามเหตุการณ์ (Ticket ID)', size: 'xs', color: '#888888' },
+                    { type: 'text', text: ticketId, size: 'xl', weight: 'bold', color: '#7E212A', margin: 'xs' },
+                    { type: 'separator', margin: 'md' },
+                    { type: 'text', text: `ระดับความเสี่ยง: ${riskLevel}`, size: 'xs', margin: 'md', color: '#333333', weight: 'bold' },
+                    { type: 'text', text: 'สถานะ: 1. รับเรื่องแล้ว (Pending)', size: 'xs', margin: 'xs', color: '#10B981' }
+                  ]
+                },
+                footer: {
+                  type: 'box',
+                  layout: 'vertical',
+                  contents: [
+                    {
+                      type: 'button',
+                      action: {
+                        type: 'uri',
+                        label: 'ดูรายละเอียดบัตรคิว',
+                        uri: `https://${window.location.hostname}/success.html?ticketId=${ticketId}`
+                      },
+                      style: 'primary',
+                      color: '#7E212A'
+                    }
+                  ]
+                }
+              }
+            }
+          ]);
+        } catch (liffMsgErr) {
+          console.warn('ไม่สามารถส่ง Flex Message ผ่าน liff.sendMessages ได้:', liffMsgErr);
+        }
+      }
+
       window.location.href = `success.html?ticketId=${ticketId}`;
 
     } catch (err) {
-      alert('เกิดข้อผิดพลาดทางไวยากรณ์/โค้ด: ' + err.message);
+      alert('เกิดข้อผิดพลาดของระบบ: ' + err.message);
       console.error('Submit Exception:', err);
     }
   });
