@@ -4,7 +4,6 @@
 
 let userLineId = null;
 
-// 🔑 ใส่ Channel Access Token จากแท็บ Messaging API ของ LINE Developers ที่นี่
 const ADMIN_CHANNEL_ACCESS_TOKEN = "NsVrAuCpDEqHMxb1Hro1eCqDt2QTG6HkOtSqbAT/rRs1L3eKely3hMobj9YlGnLxG7pcyrPs/mJuhBeoTjI5s9014I921gWHxy5Pn6xGlJbf/RsOgGKbGi+ybKGS4R2Zuhme2cPox6beSfBKlKiJKAdB04t89/1O/w1cDnyilFU=";
 const ADMIN_USER_ID = "U481b71b133dfa730d4d90ab929a2ab39";
 
@@ -230,7 +229,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
       }
 
-      // 4. ส่ง Push Message การ์ดแจ้งเตือนไปยัง LINE ของแอดมิน
+      // 4. ส่ง Push Message การ์ดแจ้งเตือนไปยัง LINE ของแอดมินผ่าน Backend API
       await sendAdminNotification(ticketId, `${firstName} ${lastName}`, area, hazardType, riskLevel, riskScore);
 
       // 5. ย้ายหน้าไปยัง success.html
@@ -243,73 +242,31 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 });
 
-// ฟังก์ชันส่ง Push Message หาแอดมินโดยเฉพาะ
+// ฟังก์ชันส่ง Push Message หาแอดมินผ่าน Vercel Serverless Function
 async function sendAdminNotification(ticketId, reporterName, area, hazardType, riskLevel, riskScore) {
-  if (!ADMIN_CHANNEL_ACCESS_TOKEN || ADMIN_CHANNEL_ACCESS_TOKEN.includes("วาง_CHANNEL_ACCESS_TOKEN")) {
-    console.warn("ข้ามการส่งแจ้งเตือนแอดมิน: ยังไม่ได้ใส่ ADMIN_CHANNEL_ACCESS_TOKEN");
-    return;
-  }
-
-  const payload = {
-    to: ADMIN_USER_ID,
-    messages: [
-      {
-        type: 'flex',
-        altText: `🚨 แจ้งเหตุใหม่! [${ticketId}] พื้นที่: ${area}`,
-        contents: {
-          type: 'bubble',
-          header: {
-            type: 'box',
-            layout: 'vertical',
-            backgroundColor: '#7E212A',
-            contents: [
-              { type: 'text', text: '🚨 แจ้งเหตุ Near Miss ใหม่!', color: '#FFFFFF', weight: 'bold', size: 'sm' }
-            ]
-          },
-          body: {
-            type: 'box',
-            layout: 'vertical',
-            contents: [
-              { type: 'text', text: `Ticket ID: ${ticketId}`, weight: 'bold', size: 'md', color: '#7E212A' },
-              { type: 'separator', margin: 'sm' },
-              { type: 'text', text: `ผู้แจ้ง: ${reporterName}`, size: 'xs', margin: 'md', color: '#555555' },
-              { type: 'text', text: `พื้นที่เกิดเหตุ: ${area}`, size: 'xs', margin: 'xs', color: '#555555' },
-              { type: 'text', text: `ประเภทอันตราย: ${hazardType}`, size: 'xs', margin: 'xs', color: '#555555' },
-              { type: 'text', text: `ความเสี่ยง: ${riskLevel} (Score: ${riskScore})`, size: 'xs', margin: 'xs', weight: 'bold', color: '#D97706' }
-            ]
-          },
-          footer: {
-            type: 'box',
-            layout: 'vertical',
-            contents: [
-              {
-                type: 'button',
-                action: {
-                  type: 'uri',
-                  label: 'เปิด Dashboard จัดการเคส',
-                  uri: `https://${window.location.hostname}/dashboard.html`
-                },
-                style: 'primary',
-                color: '#7E212A'
-              }
-            ]
-          }
-        }
-      }
-    ]
-  };
-
   try {
-    await fetch('https://api.line.me/v2/bot/message/push', {
+    const res = await fetch('/api/notify-admin', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${ADMIN_CHANNEL_ACCESS_TOKEN}`
+        'Content-Type': 'application/json'
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+        ticketId,
+        reporterName,
+        area,
+        hazardType,
+        riskLevel,
+        riskScore
+      })
     });
-    console.log('Admin notification sent successfully!');
+
+    if (res.ok) {
+      console.log('ส่งแจ้งเตือนแอดมินเรียบร้อยแล้ว');
+    } else {
+      const errData = await res.json();
+      console.error('ส่งแจ้งเตือนแอดมินไม่สำเร็จ:', errData);
+    }
   } catch (err) {
-    console.error('Failed to send admin notification:', err);
+    console.error('เกิดข้อผิดพลาดในการเรียก API แอดมิน:', err);
   }
 }
