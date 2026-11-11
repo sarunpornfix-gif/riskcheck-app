@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   const { ticketId, reporterName, area, hazardType, riskLevel, riskScore } = req.body;
 
   const ADMIN_CHANNEL_ACCESS_TOKEN = "NsVrAuCpDEqHMxb1Hro1eCqDt2QTG6HkOtSqbAT/rRs1L3eKely3hMobj9YlGnLxG7pcyrPs/mJuhBeoTjI5s9014I921gWHxy5Pn6xGlJbf/RsOgGKbGi+ybKGS4R2Zuhme2cPox6beSfBKlKiJKAdB04t89/1O/w1cDnyilFU=";
-  const ADMIN_USER_ID = "U481b71b133dfa730d4d90ab929a2ab39";
+  const ADMIN_USER_ID = "U692c5dd9a7c11b1ca5fb2436011abdc7";
 
   const payload = {
     to: ADMIN_USER_ID,
