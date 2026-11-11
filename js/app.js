@@ -5,8 +5,8 @@
 let userLineId = null;
 
 // 🔑 ใส่ Channel Access Token จากแท็บ Messaging API ของ LINE Developers ที่นี่
-const ADMIN_CHANNEL_ACCESS_TOKEN = "JOfw4BjTa4VCyhQeyvubRfcUrCmTW5vJ4khfWryas4CbbXWJCOBaoo9dIYOK9On36L5CfkH+CLlHwbYjGA0bG924km3H3LB6H36SJn4p2KTPEIdh/KeWC9YDnfixwbwWcCUYjKpS2fEjNpluOfLhwQdB04t89/1O/w1cDnyilFU";
-const ADMIN_USER_ID = "U692c5dd9a7c11b1ca5fb2436011abdc7";
+const ADMIN_CHANNEL_ACCESS_TOKEN = "NsVrAuCpDEqHMxb1Hro1eCqDt2QTG6HkOtSqbAT/rRs1L3eKely3hMobj9YlGnLxG7pcyrPs/mJuhBeoTjI5s9014I921gWHxy5Pn6xGlJbf/RsOgGKbGi+ybKGS4R2Zuhme2cPox6beSfBKlKiJKAdB04t89/1O/w1cDnyilFU=";
+const ADMIN_USER_ID = "U481b71b133dfa730d4d90ab929a2ab39";
 
 document.addEventListener('DOMContentLoaded', async () => {
   // 1. เริ่มทำงาน LINE LIFF เพื่อดึง User ID ผู้ใช้งาน
