@@ -4,8 +4,12 @@
 
 let userLineId = null;
 
+// 🔑 ใส่ Channel Access Token จากแท็บ Messaging API ของ LINE Developers ที่นี่
+const ADMIN_CHANNEL_ACCESS_TOKEN = "JOfw4BjTa4VCyhQeyvubRfcUrCmTW5vJ4khfWryas4CbbXWJCOBaoo9dIYOK9On36L5CfkH+CLlHwbYjGA0bG924km3H3LB6H36SJn4p2KTPEIdh/KeWC9YDnfixwbwWcCUYjKpS2fEjNpluOfLhwQdB04t89/1O/w1cDnyilFU";
+const ADMIN_USER_ID = "U692c5dd9a7c11b1ca5fb2436011abdc7";
+
 document.addEventListener('DOMContentLoaded', async () => {
-  // 1. เริ่มทำงาน LINE LIFF เพื่อดึง User ID
+  // 1. เริ่มทำงาน LINE LIFF เพื่อดึง User ID ผู้ใช้งาน
   try {
     await liff.init({ liffId: "2012528048-jMOQR1vJ" });
     if (liff.isLoggedIn()) {
@@ -13,11 +17,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       userLineId = profile.userId;
       console.log('LINE User ID Connected:', userLineId);
     } else {
-      // หากเปิดนอก LINE ให้บังคับ Log in
       liff.login();
     }
   } catch (err) {
-    console.warn('LIFF init warning (อาจเปิดทดสอบบน Browser ปกติ):', err.message);
+    console.warn('LIFF init warning:', err.message);
   }
 
   const form = document.getElementById('nearMissForm');
@@ -141,7 +144,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const todayStr = date.replace(/-/g, '');
       const ticketId = `RC-${todayStr}-${randomNum}`;
 
-      // บันทึกข้อมูลลง Supabase พร้อม line_user_id
+      // 2. บันทึกข้อมูลลง Supabase พร้อม line_user_id
       const { error: insertError } = await supabaseClient
         .from('riskcheck_reports')
         .insert([
@@ -175,7 +178,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
 
-      // หากเปิดผ่าน LINE ให้ยิง Flex Message บัตรคิวกลับเข้าแชท
+      // 3. ส่ง Flex Message บัตรคิวกลับเข้าแชทของผู้รายงาน
       if (typeof liff !== 'undefined' && liff.isInClient()) {
         try {
           await liff.sendMessages([
@@ -223,11 +226,14 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
           ]);
         } catch (liffMsgErr) {
-          alert('แจ้งเตือนสิทธิ์ LINE: ' + liffMsgErr.message);
+          console.warn('ไม่สามารถส่ง Flex Message ให้ผู้แจ้งได้:', liffMsgErr.message);
         }
       }
 
-      // ย้ายหน้าไปยัง success.html
+      // 4. ส่ง Push Message การ์ดแจ้งเตือนไปยัง LINE ของแอดมิน
+      await sendAdminNotification(ticketId, `${firstName} ${lastName}`, area, hazardType, riskLevel, riskScore);
+
+      // 5. ย้ายหน้าไปยัง success.html
       window.location.href = `success.html?ticketId=${ticketId}`;
 
     } catch (err) {
@@ -236,3 +242,74 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 });
+
+// ฟังก์ชันส่ง Push Message หาแอดมินโดยเฉพาะ
+async function sendAdminNotification(ticketId, reporterName, area, hazardType, riskLevel, riskScore) {
+  if (!ADMIN_CHANNEL_ACCESS_TOKEN || ADMIN_CHANNEL_ACCESS_TOKEN.includes("วาง_CHANNEL_ACCESS_TOKEN")) {
+    console.warn("ข้ามการส่งแจ้งเตือนแอดมิน: ยังไม่ได้ใส่ ADMIN_CHANNEL_ACCESS_TOKEN");
+    return;
+  }
+
+  const payload = {
+    to: ADMIN_USER_ID,
+    messages: [
+      {
+        type: 'flex',
+        altText: `🚨 แจ้งเหตุใหม่! [${ticketId}] พื้นที่: ${area}`,
+        contents: {
+          type: 'bubble',
+          header: {
+            type: 'box',
+            layout: 'vertical',
+            backgroundColor: '#7E212A',
+            contents: [
+              { type: 'text', text: '🚨 แจ้งเหตุ Near Miss ใหม่!', color: '#FFFFFF', weight: 'bold', size: 'sm' }
+            ]
+          },
+          body: {
+            type: 'box',
+            layout: 'vertical',
+            contents: [
+              { type: 'text', text: `Ticket ID: ${ticketId}`, weight: 'bold', size: 'md', color: '#7E212A' },
+              { type: 'separator', margin: 'sm' },
+              { type: 'text', text: `ผู้แจ้ง: ${reporterName}`, size: 'xs', margin: 'md', color: '#555555' },
+              { type: 'text', text: `พื้นที่เกิดเหตุ: ${area}`, size: 'xs', margin: 'xs', color: '#555555' },
+              { type: 'text', text: `ประเภทอันตราย: ${hazardType}`, size: 'xs', margin: 'xs', color: '#555555' },
+              { type: 'text', text: `ความเสี่ยง: ${riskLevel} (Score: ${riskScore})`, size: 'xs', margin: 'xs', weight: 'bold', color: '#D97706' }
+            ]
+          },
+          footer: {
+            type: 'box',
+            layout: 'vertical',
+            contents: [
+              {
+                type: 'button',
+                action: {
+                  type: 'uri',
+                  label: 'เปิด Dashboard จัดการเคส',
+                  uri: `https://${window.location.hostname}/dashboard.html`
+                },
+                style: 'primary',
+                color: '#7E212A'
+              }
+            ]
+          }
+        }
+      }
+    ]
+  };
+
+  try {
+    await fetch('https://api.line.me/v2/bot/message/push', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${ADMIN_CHANNEL_ACCESS_TOKEN}`
+      },
+      body: JSON.stringify(payload)
+    });
+    console.log('Admin notification sent successfully!');
+  } catch (err) {
+    console.error('Failed to send admin notification:', err);
+  }
+}
